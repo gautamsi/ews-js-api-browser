@@ -1,0 +1,36 @@
+{
+  "name": "ews-js-api-browser",
+  "version": "0.0.1",
+  "description": "EWS Managed api in JavaScript fo Ionic and Electron",
+  "main": "./dist/ExchangeWebService.js",
+  "scripts": {
+    "build": "tsc"
+  },
+  "typings": "./dist/ExchangeWebService.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gautamsi/ews-js-api-browser.git"
+  },
+  "keywords": [
+    "ews",
+    "ews javascript api",
+    "ews-javascript-api",
+    "exchange web service"
+  ],
+  "author": "Gautam Singh (gautamsi)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/gautamsi/ews-javascript-api/issues"
+  },
+  "homepage": "https://github.com/gautamsi/ews-javascript-api",
+  "dependencies": {
+    "@types/moment-timezone": "^0.2.34",
+    "base64-js": "^1.2.0",
+    "moment": "^2.17.1",
+    "moment-timezone": "^0.5.11",
+    "uuid": "^3.1.0"
+  },
+  "devDependencies": {
+    "@types/uuid": "^2.0.29"
+  }
+}
