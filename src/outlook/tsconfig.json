@@ -2,13 +2,12 @@
     "compilerOptions": {
         "target": "es5",
         "module": "commonjs",
-        "declaration": true,
-        "sourceMap": true,
+        "declaration": false,
+        "sourceMap": false,
         "noImplicitAny": false,
         "removeComments": false,
         "noLib": false,
-        "outDir": "dist",
-        "sourceRoot": "src",
+        "outDir": "../../dist",
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
         "allowUnreachableCode": true,
@@ -17,9 +16,10 @@
         "stripInternal": true
     },
     "compileOnSave": false,
+    "files": [
+        "./ExchangeWebService.ts"
+    ],
     "exclude": [
-        "node_modules",
-        "dist",
-        "src/outlook"
-    ]    
+        "../ExchangeWebService.ts"
+    ]
 }
