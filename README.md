@@ -5,6 +5,8 @@
 built for ionic, electron and Outlook Add-In (mail apps) from https://github.com/gautamsi/ews-javascript-api  
 based on `ews-javascript-api@0.9.1`    
 
+> 0.1.0 adds support for Outlook Mail Apps/Add-ins
+
 ## installing (for ionic/cordova)
 `npm install ews-js-api-browser`
 
@@ -53,7 +55,7 @@ Follow examples from `ews-jsvascript-api`
 see next section
 
 # Working with plain js/ts (no module loaders/bundlers)
-you have to copy ExchangeWebService.js (and ExchangeWebService.d.ts if you need typing support in typescript) to your project/scripts directory, include ExchangeWebService.js in html file (`<script>` tag). This exposes a global namespace `EwsJS`.
+you have to copy `dist/outlook/ExchangeWebService.js` (and `dist/outlook/ExchangeWebService.d.ts` if you need typing support in typescript) to your project/scripts directory, include ExchangeWebService.js in html file (`<script>` tag). This exposes a global namespace `EwsJS`.
 
 > for outlook add-ins/mail apps, configure for outlook by caling    call `EwsJS.ConfigureForOutlook()` inside `Office.initialize`. 
 
