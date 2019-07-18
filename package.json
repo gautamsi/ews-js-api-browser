@@ -5,7 +5,8 @@
   "main": "./dist/ExchangeWebService.js",
   "scripts": {
     "build": "tsc",
-    "build:outlook": "tsc -p src/outlook/tsconfig.json && npm run build && browserify dist/outlook/ExchangeWebService.js -o dist/outlook/ExchangeWebService.js --ig && copy src\\outlook\\*.d.ts dist\\outlook\\ /y"
+    "build:outlook": "npm run build && tsc -p src/outlook/tsconfig.json",
+    "build:finalize": "browserify dist/outlook/ExchangeWebService.js -o dist/outlook/ExchangeWebService.js --ig && copy src\\outlook\\*.d.ts dist\\outlook\\ /y"
   },
   "typings": "./dist/ExchangeWebService.d.ts",
   "repository": {

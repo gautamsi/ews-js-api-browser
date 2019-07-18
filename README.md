@@ -3,7 +3,10 @@
 ## Exchange Web Service in JavaScript/TypeScript. For ionic/electron/Outlook Add-In (mail apps) and other browser process.
 
 built for ionic, electron and Outlook Add-In (mail apps) from https://github.com/gautamsi/ews-javascript-api  
-based on `ews-javascript-api@0.9.1`    
+based on `ews-javascript-api@0.9.5`    
+
+> 0.2.0 brings changes from `ews-javascript-api@0.9.5`
+
 
 > 0.1.0 adds support for Outlook Mail Apps/Add-ins
 

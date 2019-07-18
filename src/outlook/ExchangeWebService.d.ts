@@ -19,7 +19,7 @@ declare namespace EwsJS {
     }
     function ConfigureForOutlook(): void;
     //export * from 'ews-js-api-browser';
-    
+
     interface IndexerWithStringKey<TValue> {
         [index: string]: TValue;
     }
@@ -86,7 +86,7 @@ declare namespace EwsJS {
     enum DateTimeKind {
         Unspecified = 0,
         Utc = 1,
-        Local = 2,
+        Local = 2
     }
     /**
      * DateTime - basic date time based on moment.js
@@ -26378,6 +26378,4 @@ declare namespace EwsJS {
         GetPhoneCallInformation(id: PhoneCallId): PhoneCall;
         PlayOnPhone(itemId: ItemId, dialString: string): PhoneCall;
     }
-
 }
-
