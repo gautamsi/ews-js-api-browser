@@ -14,7 +14,14 @@
         "allowUnreachableCode": true,
         "pretty": false,
         "inlineSourceMap": false,
-        "stripInternal": true
+        "stripInternal": true,
+        "typeRoots": [
+            "typings/",
+        ],
+        "lib": [
+            "dom",
+            "es2015",
+        ]
     },
     "compileOnSave": false,
     "exclude": [

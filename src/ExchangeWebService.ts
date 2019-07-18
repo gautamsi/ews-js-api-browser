@@ -608,7 +608,10 @@ export class DateTime {
     /* c# DateTime properties */
 
     public get Date(): DateTime {
-        return new DateTime(this.momentDate.format("Y-MM-DD"));
+        if (this === DateTime.MaxValue || this === DateTime.MinValue) {
+            return new DateTime(this.momentDate.utc().format("YYYY-MM-DD"))
+        }
+        return new DateTime(this.momentDate.format("YYYY-MM-DD"));
     }
     public get Day(): number {
         return this.momentDate.date();
@@ -986,6 +989,22 @@ module object {
     }
 }
 
+/**
+ * explicitly checks if the obj is null or undefined
+ * @param obj input to be checked
+ */
+export function isNullOrUndefined(obj: any): boolean {
+    return obj === undefined || obj === null;
+}
+
+/**
+ * explicitly checks if the obj has value and it is NOT null or undefined
+ * @param obj input to be checked
+ */
+export function hasValue(obj: any): boolean {
+    return !isNullOrUndefined(obj);
+}
+
 export module ArrayHelper {
     export function AddRange<T>(array: Array<T>, items: Array<T>, uniqueOnly: boolean = false): void {
         if (Object.prototype.toString.call(array) !== "[object Array]")
@@ -1198,9 +1217,9 @@ export class xml2JsObject {
                     obj[TYPE_STR] = xmlNode.localName;
                 }
                 var nonGenericAttributeCount = 0;
-                for (var i = 0; i < xmlNode.attributes.length; i++) {
+                for (var i = 0; i < xmlNode["attributes"].length; i++) {
                     nonGenericAttributeCount++;
-                    var attr: Attr = xmlNode.attributes.item(i);
+                    var attr: Attr = xmlNode["attributes"].item(i);
                     if (attr.prefix)
                         if (attr.prefix === 'xmlns') {
                             this.addXMLNS(xmlnsRoot, attr.localName, attr.value);
@@ -1376,9 +1395,8 @@ export class UriHelper {
 declare var window: any;
 var isNode = (typeof window === 'undefined')
 var dp: any = undefined;
-
-declare var require: any;
 declare var Buffer: any;
+declare var require: any;
 
 // if (isNode) {
 
@@ -1437,7 +1455,7 @@ export module base64Helper {
 
     export function btoa(textToEncode: string): string {
         if (isNode) {
-            var b = new Buffer(textToEncode);
+            var b = new Buffer.from(textToEncode);
             return b.toString('base64');
         } else {
             return window.btoa(textToEncode);
@@ -1445,7 +1463,7 @@ export module base64Helper {
     }
     export function atob(textToDecode: string): string {
         if (isNode) {
-            var b = new Buffer(textToDecode, 'base64');
+            var b = new Buffer.from(textToDecode, 'base64');
             return b.toString();
         } else {
             return window.atob(textToDecode);
@@ -1453,8 +1471,12 @@ export module base64Helper {
     }
 }
 
+
 /** Guid proxy class */
 export class Guid {
+
+	static ParseStrict: boolean = false;
+
 	static Empty: Guid = new Guid();
 	private guid: string = '00000000-0000-0000-0000-000000000000';
 	//private regx = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -1463,24 +1485,31 @@ export class Guid {
 	constructor();
 	constructor(str: string);
 	constructor(str?: string) {
-		let regx = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+		let regxStrict = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+		let regxRelax = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 		if (arguments.length > 0) {
 			if (StringHelper.IsNullOrEmpty(str) || str === null) {
 				throw new TypeError("Guid.ctor - invalid input");
 			}
 			//str = str.replace("-", "").replace("{", "").replace("}", "").toLowerCase();
 			str = str.replace("{", "").replace("}", "").toLowerCase();
-			if (regx.test(str)) {
+			if (regxStrict.test(str)) {
 				this.guid = str;
 			} else {
-				throw new TypeError("Guid.ctor - invalid input");
+				if (!Guid.ParseStrict && regxRelax.test(str)) {
+					EwsLogging.DebugLog("info: Guid.ctor - guid is in generic format. if you want to error on non uuid v4 format, set `Guid.ParseStrict = true`")
+					this.guid = str;
+				}
+				else {
+					throw new TypeError("Guid.ctor - invalid input, input not of type uuid v4");
+				}
 			}
 		}
 	}
 	ToString() {
 		return this.guid;
 	}
-	toString(){
+	toString() {
 		return this.guid;
 	}
 
@@ -2470,7 +2499,6 @@ export class TimeSpan {
     Add(ms: number): TimeSpan;
     Add(ts: TimeSpan): TimeSpan;
     Add(a: number | TimeSpan, p?: moment.unitOfTime.Base): TimeSpan {
-
         if (arguments.length === 1) {
             return new TimeSpan(typeof a === 'number' ? this.duration.add(a) : a.TotalMilliseconds);
         }
@@ -2539,8 +2567,7 @@ export class TimeSpan {
     }
     toString() {
         return this.duration.toISOString();
-    }
-
+    }    
 }
 
 module TimeSpan2 {
@@ -2704,2136 +2731,7 @@ module TimeSpan2 {
 
     }
 }
-
-export let TimeZoneMappingData = {
-	"America/Aruba": "SA Western Standard Time",
-	"Europe/Copenhagen": "Romance Standard Time",
-	"Europe/Brussels": "Romance Standard Time",
-	"Africa/Tunis": "W. Central Africa Standard Time",
-	"America/Pangnirtung": "Eastern Standard Time",
-	"Africa/Malabo": "W. Central Africa Standard Time",
-	"America/Guyana": "SA Western Standard Time",
-	"W. Mongolia Standard Time": [
-		[
-			"Asia/Hovd"
-		],
-		"(UTC+07:00) Hovd",
-		"W. Mongolia Standard Time",
-		"W. Mongolia Daylight Time",
-		true,
-		420
-	],
-	"Russia Time Zone 10": [
-		[
-			"Asia/Srednekolymsk"
-		],
-		"(UTC+11:00) Chokurdakh",
-		"Russia TZ 10 Standard Time",
-		"Russia TZ 10 Daylight Time",
-		true,
-		660
-	],
-	"Ekaterinburg Standard Time": [
-		[
-			"Asia/Yekaterinburg"
-		],
-		"(UTC+05:00) Ekaterinburg",
-		"Russia TZ 4 Standard Time",
-		"Russia TZ 4 Daylight Time",
-		true,
-		300
-	],
-	"Australia/Lindeman": "E. Australia Standard Time",
-	"Asia/Famagusta": "Turkey Standard Time",
-	"America/Mendoza": "Argentina Standard Time",
-	"Indian/Cocos": "Myanmar Standard Time",
-	"America/North_Dakota/Beulah": "Central Standard Time",
-	"America/Los_Angeles": "Pacific Standard Time",
-	"Sakhalin Standard Time": [
-		[
-			"Asia/Sakhalin"
-		],
-		"(UTC+11:00) Sakhalin",
-		"Sakhalin Standard Time",
-		"Sakhalin Daylight Time",
-		true,
-		660
-	],
-	"Altai Standard Time": [
-		[
-			"Asia/Barnaul"
-		],
-		"(UTC+07:00) Barnaul, Gorno-Altaysk",
-		"Altai Standard Time",
-		"Altai Daylight Time",
-		true,
-		420
-	],
-	"Pacific/Guam": "West Pacific Standard Time",
-	"Pacific/Nauru": "UTC+12",
-	"Africa/Brazzaville": "W. Central Africa Standard Time",
-	"Europe/Jersey": "GMT Standard Time",
-	"Newfoundland Standard Time": [
-		[
-			"America/St_Johns"
-		],
-		"(UTC-03:30) Newfoundland",
-		"Newfoundland Standard Time",
-		"Newfoundland Daylight Time",
-		true,
-		-210
-	],
-	"Europe/Vaduz": "W. Europe Standard Time",
-	"Pacific/Ponape": "Central Pacific Standard Time",
-	"America/Indiana/Knox": "Central Standard Time",
-	"America/Argentina/Ushuaia": "Argentina Standard Time",
-	"Tasmania Standard Time": [
-		[
-			"Australia/Hobart",
-			"Australia/Currie"
-		],
-		"(UTC+10:00) Hobart",
-		"Tasmania Standard Time",
-		"Tasmania Daylight Time",
-		true,
-		600
-	],
-	"Asia/Jakarta": "SE Asia Standard Time",
-	"Europe/Vilnius": "FLE Standard Time",
-	"Africa/Kigali": "South Africa Standard Time",
-	"America/St_Kitts": "SA Western Standard Time",
-	"Indian/Kerguelen": "West Asia Standard Time",
-	"Africa/Libreville": "W. Central Africa Standard Time",
-	"West Pacific Standard Time": [
-		[
-			"Pacific/Port_Moresby",
-			"Antarctica/DumontDUrville",
-			"Pacific/Truk",
-			"Pacific/Guam",
-			"Pacific/Saipan",
-			"Etc/GMT-10"
-		],
-		"(UTC+10:00) Guam, Port Moresby",
-		"West Pacific Standard Time",
-		"West Pacific Daylight Time",
-		false,
-		600
-	],
-	"Atlantic Standard Time": [
-		[
-			"America/Halifax",
-			"Atlantic/Bermuda",
-			"America/Glace_Bay",
-			"America/Goose_Bay",
-			"America/Moncton",
-			"America/Thule"
-		],
-		"(UTC-04:00) Atlantic Time (Canada)",
-		"Atlantic Standard Time",
-		"Atlantic Daylight Time",
-		true,
-		-240
-	],
-	"W. Central Africa Standard Time": [
-		[
-			"Africa/Lagos",
-			"Africa/Luanda",
-			"Africa/Porto-Novo",
-			"Africa/Kinshasa",
-			"Africa/Bangui",
-			"Africa/Brazzaville",
-			"Africa/Douala",
-			"Africa/Algiers",
-			"Africa/Libreville",
-			"Africa/Malabo",
-			"Africa/Niamey",
-			"Africa/Ndjamena",
-			"Africa/Tunis",
-			"Etc/GMT-1"
-		],
-		"(UTC+01:00) West Central Africa",
-		"W. Central Africa Standard Time",
-		"W. Central Africa Daylight Time",
-		false,
-		60
-	],
-	"Etc/GMT+8": "UTC-08",
-	"Atlantic/Faeroe": "GMT Standard Time",
-	"America/Sitka": "Alaskan Standard Time",
-	"UTC": [
-		[
-			"Etc/GMT",
-			"America/Danmarkshavn",
-			"Etc/UTC"
-		],
-		"(UTC) Coordinated Universal Time",
-		"Coordinated Universal Time",
-		"Coordinated Universal Time",
-		false,
-		0
-	],
-	"Fiji Standard Time": [
-		[
-			"Pacific/Fiji"
-		],
-		"(UTC+12:00) Fiji",
-		"Fiji Standard Time",
-		"Fiji Daylight Time",
-		true,
-		720
-	],
-	"Pacific/Kosrae": "Central Pacific Standard Time",
-	"West Asia Standard Time": [
-		[
-			"Asia/Tashkent",
-			"Antarctica/Mawson",
-			"Asia/Oral",
-			"Asia/Aqtau",
-			"Asia/Aqtobe",
-			"Asia/Atyrau",
-			"Indian/Maldives",
-			"Indian/Kerguelen",
-			"Asia/Dushanbe",
-			"Asia/Ashgabat",
-			"Asia/Samarkand",
-			"Etc/GMT-5"
-		],
-		"(UTC+05:00) Ashgabat, Tashkent",
-		"West Asia Standard Time",
-		"West Asia Daylight Time",
-		false,
-		300
-	],
-	"Europe/Belgrade": "Central Europe Standard Time",
-	"Mid-Atlantic Standard Time": [
-		null,
-		"(UTC-02:00) Mid-Atlantic - Old",
-		"Mid-Atlantic Standard Time",
-		"Mid-Atlantic Daylight Time",
-		true,
-		-120
-	],
-	"Magallanes Standard Time": [
-		null,
-		"(UTC-03:00) Punta Arenas",
-		"Magallanes Standard Time",
-		"Magallanes Daylight Time",
-		true,
-		-180
-	],
-	"Kamchatka Standard Time": [
-		null,
-		"(UTC+12:00) Petropavlovsk-Kamchatsky - Old",
-		"Kamchatka Standard Time",
-		"Kamchatka Daylight Time",
-		true,
-		720
-	],
-	"America/Guatemala": "Central America Standard Time",
-	"Asia/Singapore": "Singapore Standard Time",
-	"Indian/Mayotte": "E. Africa Standard Time",
-	"Nepal Standard Time": [
-		[
-			"Asia/Katmandu"
-		],
-		"(UTC+05:45) Kathmandu",
-		"Nepal Standard Time",
-		"Nepal Daylight Time",
-		false,
-		345
-	],
-	"UTC-11": [
-		[
-			"Etc/GMT+11",
-			"Pacific/Pago_Pago",
-			"Pacific/Niue",
-			"Pacific/Midway"
-		],
-		"(UTC-11:00) Coordinated Universal Time-11",
-		"UTC-11",
-		"UTC-11",
-		false,
-		-660
-	],
-	"Asia/Qatar": "Arab Standard Time",
-	"Georgian Standard Time": [
-		[
-			"Asia/Tbilisi"
-		],
-		"(UTC+04:00) Tbilisi",
-		"Georgian Standard Time",
-		"Georgian Daylight Time",
-		false,
-		240
-	],
-	"Europe/Simferopol": "Russian Standard Time",
-	"Etc/GMT+10": "Hawaiian Standard Time",
-	"Australia/Adelaide": "Cen. Australia Standard Time",
-	"America/Fort_Nelson": "US Mountain Standard Time",
-	"Transbaikal Standard Time": [
-		[
-			"Asia/Chita"
-		],
-		"(UTC+09:00) Chita",
-		"Transbaikal Standard Time",
-		"Transbaikal Daylight Time",
-		true,
-		540
-	],
-	"Aleutian Standard Time": [
-		[
-			"America/Adak"
-		],
-		"(UTC-10:00) Aleutian Islands",
-		"Aleutian Standard Time",
-		"Aleutian Daylight Time",
-		true,
-		-600
-	],
-	"America/Cayman": "SA Pacific Standard Time",
-	"Pacific Standard Time (Mexico)": [
-		[
-			"America/Tijuana",
-			"America/Santa_Isabel"
-		],
-		"(UTC-08:00) Baja California",
-		"Pacific Standard Time (Mexico)",
-		"Pacific Daylight Time (Mexico)",
-		true,
-		-480
-	],
-	"America/Thule": "Atlantic Standard Time",
-	"America/Puerto_Rico": "SA Western Standard Time",
-	"Asia/Dili": "Tokyo Standard Time",
-	"Pacific/Kiritimati": "Line Islands Standard Time",
-	"Europe/Ljubljana": "Central Europe Standard Time",
-	"Europe/Tirane": "Central Europe Standard Time",
-	"Etc/GMT-5": "West Asia Standard Time",
-	"Etc/GMT+9": "UTC-09",
-	"Europe/Gibraltar": "W. Europe Standard Time",
-	"America/Manaus": "SA Western Standard Time",
-	"America/Argentina/San_Luis": "Argentina Standard Time",
-	"Venezuela Standard Time": [
-		[
-			"America/Caracas"
-		],
-		"(UTC-04:00) Caracas",
-		"Venezuela Standard Time",
-		"Venezuela Daylight Time",
-		true,
-		-240
-	],
-	"Cen. Australia Standard Time": [
-		[
-			"Australia/Adelaide",
-			"Australia/Broken_Hill"
-		],
-		"(UTC+09:30) Adelaide",
-		"Cen. Australia Standard Time",
-		"Cen. Australia Daylight Time",
-		true,
-		570
-	],
-	"America/Guayaquil": "SA Pacific Standard Time",
-	"Afghanistan Standard Time": [
-		[
-			"Asia/Kabul"
-		],
-		"(UTC+04:30) Kabul",
-		"Afghanistan Standard Time",
-		"Afghanistan Daylight Time",
-		false,
-		270
-	],
-	"Mauritius Standard Time": [
-		[
-			"Indian/Mauritius",
-			"Indian/Reunion",
-			"Indian/Mahe"
-		],
-		"(UTC+04:00) Port Louis",
-		"Mauritius Standard Time",
-		"Mauritius Daylight Time",
-		true,
-		240
-	],
-	"New Zealand Standard Time": [
-		[
-			"Pacific/Auckland",
-			"Antarctica/McMurdo"
-		],
-		"(UTC+12:00) Auckland, Wellington",
-		"New Zealand Standard Time",
-		"New Zealand Daylight Time",
-		true,
-		720
-	],
-	"US Mountain Standard Time": [
-		[
-			"America/Phoenix",
-			"America/Dawson_Creek",
-			"America/Creston",
-			"America/Fort_Nelson",
-			"America/Hermosillo",
-			"Etc/GMT+7"
-		],
-		"(UTC-07:00) Arizona",
-		"US Mountain Standard Time",
-		"US Mountain Daylight Time",
-		false,
-		-420
-	],
-	"Tokyo Standard Time": [
-		[
-			"Asia/Tokyo",
-			"Asia/Jayapura",
-			"Pacific/Palau",
-			"Asia/Dili",
-			"Etc/GMT-9"
-		],
-		"(UTC+09:00) Osaka, Sapporo, Tokyo",
-		"Tokyo Standard Time",
-		"Tokyo Daylight Time",
-		false,
-		540
-	],
-	"Asia/Sakhalin": "Sakhalin Standard Time",
-	"Europe/Astrakhan": "Astrakhan Standard Time",
-	"America/Catamarca": "Argentina Standard Time",
-	"Africa/Lubumbashi": "South Africa Standard Time",
-	"America/Boise": "Mountain Standard Time",
-	"America/Glace_Bay": "Atlantic Standard Time",
-	"America/Tegucigalpa": "Central America Standard Time",
-	"America/Chicago": "Central Standard Time",
-	"Etc/GMT+6": "Central America Standard Time",
-	"Antarctica/Macquarie": "Central Pacific Standard Time",
-	"Europe/Kirov": "Russian Standard Time",
-	"America/Campo_Grande": "Central Brazilian Standard Time",
-	"Indian/Mauritius": "Mauritius Standard Time",
-	"America/La_Paz": "SA Western Standard Time",
-	"Russian Standard Time": [
-		[
-			"Europe/Moscow",
-			"Europe/Kirov",
-			"Europe/Volgograd",
-			"Europe/Simferopol"
-		],
-		"(UTC+03:00) Moscow, St. Petersburg, Volgograd",
-		"Russia TZ 2 Standard Time",
-		"Russia TZ 2 Daylight Time",
-		true,
-		180
-	],
-	"America/Miquelon": "Saint Pierre Standard Time",
-	"Asia/Tbilisi": "Georgian Standard Time",
-	"Asia/Aden": "Arab Standard Time",
-	"Asia/Tehran": "Iran Standard Time",
-	"Asia/Colombo": "Sri Lanka Standard Time",
-	"America/Lower_Princes": "SA Western Standard Time",
-	"Azores Standard Time": [
-		[
-			"Atlantic/Azores",
-			"America/Scoresbysund"
-		],
-		"(UTC-01:00) Azores",
-		"Azores Standard Time",
-		"Azores Daylight Time",
-		true,
-		-60
-	],
-	"America/Santo_Domingo": "SA Western Standard Time",
-	"Iran Standard Time": [
-		[
-			"Asia/Tehran"
-		],
-		"(UTC+03:30) Tehran",
-		"Iran Standard Time",
-		"Iran Daylight Time",
-		true,
-		210
-	],
-	"Mountain Standard Time (Mexico)": [
-		[
-			"America/Chihuahua",
-			"America/Mazatlan"
-		],
-		"(UTC-07:00) Chihuahua, La Paz, Mazatlan",
-		"Mountain Standard Time (Mexico)",
-		"Mountain Daylight Time (Mexico)",
-		true,
-		-420
-	],
-	"Central Europe Standard Time": [
-		[
-			"Europe/Budapest",
-			"Europe/Tirane",
-			"Europe/Prague",
-			"Europe/Podgorica",
-			"Europe/Belgrade",
-			"Europe/Ljubljana",
-			"Europe/Bratislava"
-		],
-		"(UTC+01:00) Belgrade, Bratislava, Budapest, Ljubljana, Prague",
-		"Central Europe Standard Time",
-		"Central Europe Daylight Time",
-		true,
-		60
-	],
-	"Asia/Beirut": "Middle East Standard Time",
-	"America/Denver": "Mountain Standard Time",
-	"America/Halifax": "Atlantic Standard Time",
-	"America/Barbados": "SA Western Standard Time",
-	"Pacific/Noumea": "Central Pacific Standard Time",
-	"Jordan Standard Time": [
-		[
-			"Asia/Amman"
-		],
-		"(UTC+02:00) Amman",
-		"Jordan Standard Time",
-		"Jordan Daylight Time",
-		true,
-		120
-	],
-	"Singapore Standard Time": [
-		[
-			"Asia/Singapore",
-			"Asia/Brunei",
-			"Asia/Makassar",
-			"Asia/Kuala_Lumpur",
-			"Asia/Kuching",
-			"Asia/Manila",
-			"Etc/GMT-8"
-		],
-		"(UTC+08:00) Kuala Lumpur, Singapore",
-		"Malay Peninsula Standard Time",
-		"Malay Peninsula Daylight Time",
-		false,
-		480
-	],
-	"Pacific/Rarotonga": "Hawaiian Standard Time",
-	"Asia/Saigon": "SE Asia Standard Time",
-	"Europe/Lisbon": "GMT Standard Time",
-	"America/Jamaica": "SA Pacific Standard Time",
-	"Atlantic/Stanley": "SA Eastern Standard Time",
-	"Europe/Sarajevo": "Central European Standard Time",
-	"Africa/Abidjan": "Greenwich Standard Time",
-	"Europe/London": "GMT Standard Time",
-	"Australia/Lord_Howe": "Lord Howe Standard Time",
-	"Africa/Kinshasa": "W. Central Africa Standard Time",
-	"Africa/Accra": "Greenwich Standard Time",
-	"India Standard Time": [
-		[
-			"Asia/Calcutta"
-		],
-		"(UTC+05:30) Chennai, Kolkata, Mumbai, New Delhi",
-		"India Standard Time",
-		"India Daylight Time",
-		false,
-		330
-	],
-	"Europe/Kiev": "FLE Standard Time",
-	"America/Caracas": "Venezuela Standard Time",
-	"Europe/Guernsey": "GMT Standard Time",
-	"Africa/Nairobi": "E. Africa Standard Time",
-	"Asia/Gaza": "West Bank Standard Time",
-	"America/Kentucky/Monticello": "Eastern Standard Time",
-	"Europe/Sofia": "FLE Standard Time",
-	"America/Edmonton": "Mountain Standard Time",
-	"Asia/Almaty": "Central Asia Standard Time",
-	"Asia/Anadyr": "Russia Time Zone 11",
-	"Asia/Pontianak": "SE Asia Standard Time",
-	"Europe/Madrid": "Romance Standard Time",
-	"Asia/Kamchatka": "Russia Time Zone 11",
-	"Atlantic/Bermuda": "Atlantic Standard Time",
-	"Namibia Standard Time": [
-		[
-			"Africa/Windhoek"
-		],
-		"(UTC+01:00) Windhoek",
-		"Namibia Standard Time",
-		"Namibia Daylight Time",
-		true,
-		60
-	],
-	"Pacific/Tarawa": "UTC+12",
-	"Montevideo Standard Time": [
-		[
-			"America/Montevideo"
-		],
-		"(UTC-03:00) Montevideo",
-		"Montevideo Standard Time",
-		"Montevideo Daylight Time",
-		true,
-		-180
-	],
-	"America/Costa_Rica": "Central America Standard Time",
-	"Hawaiian Standard Time": [
-		[
-			"Pacific/Honolulu",
-			"Pacific/Rarotonga",
-			"Pacific/Tahiti",
-			"Pacific/Johnston",
-			"Etc/GMT+10"
-		],
-		"(UTC-10:00) Hawaii",
-		"Hawaiian Standard Time",
-		"Hawaiian Daylight Time",
-		false,
-		-600
-	],
-	"Asia/Calcutta": "India Standard Time",
-	"Asia/Pyongyang": "North Korea Standard Time",
-	"Pacific/Palau": "Tokyo Standard Time",
-	"America/Asuncion": "Paraguay Standard Time",
-	"Sri Lanka Standard Time": [
-		[
-			"Asia/Colombo"
-		],
-		"(UTC+05:30) Sri Jayawardenepura",
-		"Sri Lanka Standard Time",
-		"Sri Lanka Daylight Time",
-		false,
-		330
-	],
-	"Asia/Dubai": "Arabian Standard Time",
-	"Mountain Standard Time": [
-		[
-			"America/Denver",
-			"America/Edmonton",
-			"America/Cambridge_Bay",
-			"America/Inuvik",
-			"America/Yellowknife",
-			"America/Ojinaga",
-			"America/Boise",
-			"MST7MDT"
-		],
-		"(UTC-07:00) Mountain Time (US &amp; Canada)",
-		"Mountain Standard Time",
-		"Mountain Daylight Time",
-		true,
-		-420
-	],
-	"America/Havana": "Cuba Standard Time",
-	"Asia/Jerusalem": "Israel Standard Time",
-	"Pacific/Gambier": "UTC-09",
-	"America/Araguaina": "Tocantins Standard Time",
-	"Pacific/Midway": "UTC-11",
-	"Asia/Manila": "Singapore Standard Time",
-	"MST7MDT": "Mountain Standard Time",
-	"Europe/Bucharest": "GTB Standard Time",
-	"Asia/Baghdad": "Arabic Standard Time",
-	"Asia/Novokuznetsk": "North Asia Standard Time",
-	"Antarctica/DumontDUrville": "West Pacific Standard Time",
-	"Africa/Blantyre": "South Africa Standard Time",
-	"Libya Standard Time": [
-		[
-			"Africa/Tripoli"
-		],
-		"(UTC+02:00) Tripoli",
-		"Libya Standard Time",
-		"Libya Daylight Time",
-		true,
-		120
-	],
-	"Samoa Standard Time": [
-		[
-			"Pacific/Apia"
-		],
-		"(UTC+13:00) Samoa",
-		"Samoa Standard Time",
-		"Samoa Daylight Time",
-		true,
-		780
-	],
-	"Pacific/Efate": "Central Pacific Standard Time",
-	"Europe/Volgograd": "Russian Standard Time",
-	"America/Argentina/Tucuman": "Argentina Standard Time",
-	"America/St_Lucia": "SA Western Standard Time",
-	"Europe/Budapest": "Central Europe Standard Time",
-	"Etc/GMT+1": "Cape Verde Standard Time",
-	"Asia/Nicosia": "GTB Standard Time",
-	"Asia/Kuching": "Singapore Standard Time",
-	"America/Chihuahua": "Mountain Standard Time (Mexico)",
-	"Asia/Choibalsan": "Ulaanbaatar Standard Time",
-	"Europe/Zagreb": "Central European Standard Time",
-	"America/Martinique": "SA Western Standard Time",
-	"FLE Standard Time": [
-		[
-			"Europe/Kiev",
-			"Europe/Mariehamn",
-			"Europe/Sofia",
-			"Europe/Tallinn",
-			"Europe/Helsinki",
-			"Europe/Vilnius",
-			"Europe/Riga",
-			"Europe/Uzhgorod",
-			"Europe/Zaporozhye"
-		],
-		"(UTC+02:00) Helsinki, Kyiv, Riga, Sofia, Tallinn, Vilnius",
-		"FLE Standard Time",
-		"FLE Daylight Time",
-		true,
-		120
-	],
-	"America/Swift_Current": "Canada Central Standard Time",
-	"America/Hermosillo": "US Mountain Standard Time",
-	"Etc/GMT-9": "Tokyo Standard Time",
-	"America/Santarem": "SA Eastern Standard Time",
-	"Pacific/Fakaofo": "Tonga Standard Time",
-	"Greenwich Standard Time": [
-		[
-			"Atlantic/Reykjavik",
-			"Africa/Ouagadougou",
-			"Africa/Abidjan",
-			"Africa/Accra",
-			"Africa/Banjul",
-			"Africa/Conakry",
-			"Africa/Bissau",
-			"Africa/Monrovia",
-			"Africa/Bamako",
-			"Africa/Nouakchott",
-			"Atlantic/St_Helena",
-			"Africa/Freetown",
-			"Africa/Dakar",
-			"Africa/Sao_Tome",
-			"Africa/Lome"
-		],
-		"(UTC+00:00) Monrovia, Reykjavik",
-		"Greenwich Standard Time",
-		"Greenwich Daylight Time",
-		false,
-		0
-	],
-	"W. Australia Standard Time": [
-		[
-			"Australia/Perth"
-		],
-		"(UTC+08:00) Perth",
-		"W. Australia Standard Time",
-		"W. Australia Daylight Time",
-		true,
-		480
-	],
-	"Pacific/Wake": "UTC+12",
-	"America/Merida": "Central Standard Time (Mexico)",
-	"America/Scoresbysund": "Azores Standard Time",
-	"Asia/Barnaul": "Altai Standard Time",
-	"Asia/Seoul": "Korea Standard Time",
-	"America/Inuvik": "Mountain Standard Time",
-	"America/Rainy_River": "Central Standard Time",
-	"Pacific/Tahiti": "Hawaiian Standard Time",
-	"America/Iqaluit": "Eastern Standard Time",
-	"Europe/Moscow": "Russian Standard Time",
-	"Korea Standard Time": [
-		[
-			"Asia/Seoul"
-		],
-		"(UTC+09:00) Seoul",
-		"Korea Standard Time",
-		"Korea Daylight Time",
-		false,
-		540
-	],
-	"Paraguay Standard Time": [
-		[
-			"America/Asuncion"
-		],
-		"(UTC-04:00) Asuncion",
-		"Paraguay Standard Time",
-		"Paraguay Daylight Time",
-		true,
-		-240
-	],
-	"Asia/Riyadh": "Arab Standard Time",
-	"Central European Standard Time": [
-		[
-			"Europe/Warsaw",
-			"Europe/Sarajevo",
-			"Europe/Zagreb",
-			"Europe/Skopje"
-		],
-		"(UTC+01:00) Sarajevo, Skopje, Warsaw, Zagreb",
-		"Central European Standard Time",
-		"Central European Daylight Time",
-		true,
-		60
-	],
-	"Europe/Samara": "Russia Time Zone 3",
-	"Central Standard Time (Mexico)": [
-		[
-			"America/Mexico_City",
-			"America/Bahia_Banderas",
-			"America/Merida",
-			"America/Monterrey"
-		],
-		"(UTC-06:00) Guadalajara, Mexico City, Monterrey",
-		"Central Standard Time (Mexico)",
-		"Central Daylight Time (Mexico)",
-		true,
-		-360
-	],
-	"America/Indiana/Winamac": "Eastern Standard Time",
-	"North Asia East Standard Time": [
-		[
-			"Asia/Irkutsk"
-		],
-		"(UTC+08:00) Irkutsk",
-		"Russia TZ 7 Standard Time",
-		"Russia TZ 7 Daylight Time",
-		true,
-		480
-	],
-	"Asia/Yekaterinburg": "Ekaterinburg Standard Time",
-	"Africa/Addis_Ababa": "E. Africa Standard Time",
-	"Haiti Standard Time": [
-		[
-			"America/Port-au-Prince"
-		],
-		"(UTC-05:00) Haiti",
-		"Haiti Standard Time",
-		"Haiti Daylight Time",
-		true,
-		-300
-	],
-	"Asia/Jayapura": "Tokyo Standard Time",
-	"Etc/GMT-1": "W. Central Africa Standard Time",
-	"Europe/Skopje": "Central European Standard Time",
-	"America/Dominica": "SA Western Standard Time",
-	"Turks And Caicos Standard Time": [
-		[
-			"America/Grand_Turk"
-		],
-		"(UTC-04:00) Turks and Caicos",
-		"Turks and Caicos Standard Time",
-		"Turks and Caicos Daylight Time",
-		true,
-		-240
-	],
-	"Pacific/Kwajalein": "UTC+12",
-	"Etc/GMT": "UTC",
-	"AUS Eastern Standard Time": [
-		[
-			"Australia/Sydney",
-			"Australia/Melbourne"
-		],
-		"(UTC+10:00) Canberra, Melbourne, Sydney",
-		"AUS Eastern Standard Time",
-		"AUS Eastern Daylight Time",
-		true,
-		600
-	],
-	"Antarctica/Vostok": "Central Asia Standard Time",
-	"E. Europe Standard Time": [
-		[
-			"Europe/Chisinau"
-		],
-		"(UTC+02:00) Chisinau",
-		"E. Europe Standard Time",
-		"E. Europe Daylight Time",
-		true,
-		120
-	],
-	"Pacific/Majuro": "UTC+12",
-	"CST6CDT": "Central Standard Time",
-	"Indian/Mahe": "Mauritius Standard Time",
-	"America/Yellowknife": "Mountain Standard Time",
-	"Etc/GMT+5": "SA Pacific Standard Time",
-	"Marquesas Standard Time": [
-		[
-			"Pacific/Marquesas"
-		],
-		"(UTC-09:30) Marquesas Islands",
-		"Marquesas Standard Time",
-		"Marquesas Daylight Time",
-		false,
-		-570
-	],
-	"Atlantic/Madeira": "GMT Standard Time",
-	"Pacific/Tongatapu": "Tonga Standard Time",
-	"Europe/Andorra": "W. Europe Standard Time",
-	"America/Boa_Vista": "SA Western Standard Time",
-	"Europe/Vienna": "W. Europe Standard Time",
-	"Asia/Muscat": "Arabian Standard Time",
-	"America/Winnipeg": "Central Standard Time",
-	"America/Nassau": "Eastern Standard Time",
-	"Asia/Aqtobe": "West Asia Standard Time",
-	"Antarctica/McMurdo": "New Zealand Standard Time",
-	"Eastern Standard Time": [
-		[
-			"America/New_York",
-			"America/Nassau",
-			"America/Toronto",
-			"America/Iqaluit",
-			"America/Montreal",
-			"America/Nipigon",
-			"America/Pangnirtung",
-			"America/Thunder_Bay",
-			"America/Detroit",
-			"America/Indiana/Petersburg",
-			"America/Indiana/Vincennes",
-			"America/Indiana/Winamac",
-			"America/Kentucky/Monticello",
-			"America/Louisville",
-			"EST5EDT"
-		],
-		"(UTC-05:00) Eastern Time (US &amp; Canada)",
-		"Eastern Standard Time",
-		"Eastern Daylight Time",
-		true,
-		-300
-	],
-	"America/Anguilla": "SA Western Standard Time",
-	"Africa/Ouagadougou": "Greenwich Standard Time",
-	"Etc/GMT-4": "Arabian Standard Time",
-	"Atlantic/Azores": "Azores Standard Time",
-	"Europe/Mariehamn": "FLE Standard Time",
-	"Pacific/Saipan": "West Pacific Standard Time",
-	"Etc/UTC": "UTC",
-	"Australia/Currie": "Tasmania Standard Time",
-	"America/Louisville": "Eastern Standard Time",
-	"E. Africa Standard Time": [
-		[
-			"Africa/Nairobi",
-			"Antarctica/Syowa",
-			"Africa/Djibouti",
-			"Africa/Asmera",
-			"Africa/Addis_Ababa",
-			"Indian/Comoro",
-			"Indian/Antananarivo",
-			"Africa/Khartoum",
-			"Africa/Mogadishu",
-			"Africa/Juba",
-			"Africa/Dar_es_Salaam",
-			"Africa/Kampala",
-			"Indian/Mayotte",
-			"Etc/GMT-3"
-		],
-		"(UTC+03:00) Nairobi",
-		"E. Africa Standard Time",
-		"E. Africa Daylight Time",
-		false,
-		180
-	],
-	"E. South America Standard Time": [
-		[
-			"America/Sao_Paulo"
-		],
-		"(UTC-03:00) Brasilia",
-		"E. South America Standard Time",
-		"E. South America Daylight Time",
-		true,
-		-180
-	],
-	"Europe/Uzhgorod": "FLE Standard Time",
-	"America/El_Salvador": "Central America Standard Time",
-	"Pacific/Johnston": "Hawaiian Standard Time",
-	"Syria Standard Time": [
-		[
-			"Asia/Damascus"
-		],
-		"(UTC+02:00) Damascus",
-		"Syria Standard Time",
-		"Syria Daylight Time",
-		true,
-		120
-	],
-	"America/Toronto": "Eastern Standard Time",
-	"Asia/Bishkek": "Central Asia Standard Time",
-	"Atlantic/Canary": "GMT Standard Time",
-	"America/Dawson": "Pacific Standard Time",
-	"Bougainville Standard Time": [
-		[
-			"Pacific/Bougainville"
-		],
-		"(UTC+11:00) Bougainville Island",
-		"Bougainville Standard Time",
-		"Bougainville Daylight Time",
-		true,
-		660
-	],
-	"Alaskan Standard Time": [
-		[
-			"America/Anchorage",
-			"America/Juneau",
-			"America/Metlakatla",
-			"America/Nome",
-			"America/Sitka",
-			"America/Yakutat"
-		],
-		"(UTC-09:00) Alaska",
-		"Alaskan Standard Time",
-		"Alaskan Daylight Time",
-		true,
-		-540
-	],
-	"America/Curacao": "SA Western Standard Time",
-	"America/Eirunepe": "SA Pacific Standard Time",
-	"Asia/Ust-Nera": "Vladivostok Standard Time",
-	"SA Pacific Standard Time": [
-		[
-			"America/Bogota",
-			"America/Rio_Branco",
-			"America/Eirunepe",
-			"America/Coral_Harbour",
-			"America/Guayaquil",
-			"America/Jamaica",
-			"America/Cayman",
-			"America/Panama",
-			"America/Lima",
-			"Etc/GMT+5"
-		],
-		"(UTC-05:00) Bogota, Lima, Quito, Rio Branco",
-		"SA Pacific Standard Time",
-		"SA Pacific Daylight Time",
-		false,
-		-300
-	],
-	"Africa/Lome": "Greenwich Standard Time",
-	"Pacific/Pago_Pago": "UTC-11",
-	"America/Cambridge_Bay": "Mountain Standard Time",
-	"America/Indianapolis": "US Eastern Standard Time",
-	"America/Indiana/Vevay": "US Eastern Standard Time",
-	"Antarctica/Davis": "SE Asia Standard Time",
-	"Asia/Srednekolymsk": "Russia Time Zone 10",
-	"America/Bogota": "SA Pacific Standard Time",
-	"Europe/Saratov": "Astrakhan Standard Time",
-	"UTC+13": [
-		null,
-		"(UTC+13:00) Coordinated Universal Time+13",
-		"UTC+13",
-		"UTC+13",
-		false,
-		780
-	],
-	"Europe/Vatican": "W. Europe Standard Time",
-	"Belarus Standard Time": [
-		[
-			"Europe/Minsk"
-		],
-		"(UTC+03:00) Minsk",
-		"Belarus Standard Time",
-		"Belarus Daylight Time",
-		true,
-		180
-	],
-	"Europe/Riga": "FLE Standard Time",
-	"Arctic/Longyearbyen": "W. Europe Standard Time",
-	"Asia/Tashkent": "West Asia Standard Time",
-	"America/Guadeloupe": "SA Western Standard Time",
-	"Africa/Conakry": "Greenwich Standard Time",
-	"America/Port-au-Prince": "Haiti Standard Time",
-	"America/Belize": "Central America Standard Time",
-	"South Africa Standard Time": [
-		[
-			"Africa/Johannesburg",
-			"Africa/Bujumbura",
-			"Africa/Gaborone",
-			"Africa/Lubumbashi",
-			"Africa/Maseru",
-			"Africa/Blantyre",
-			"Africa/Maputo",
-			"Africa/Kigali",
-			"Africa/Mbabane",
-			"Africa/Lusaka",
-			"Africa/Harare",
-			"Etc/GMT-2"
-		],
-		"(UTC+02:00) Harare, Pretoria",
-		"South Africa Standard Time",
-		"South Africa Daylight Time",
-		false,
-		120
-	],
-	"Europe/Warsaw": "Central European Standard Time",
-	"Africa/Dakar": "Greenwich Standard Time",
-	"UTC-08": [
-		[
-			"Etc/GMT+8",
-			"Pacific/Pitcairn"
-		],
-		"(UTC-08:00) Coordinated Universal Time-08",
-		"UTC-08",
-		"UTC-08",
-		false,
-		-480
-	],
-	"America/Vancouver": "Pacific Standard Time",
-	"Europe/Ulyanovsk": "Astrakhan Standard Time",
-	"Europe/Amsterdam": "W. Europe Standard Time",
-	"Cuba Standard Time": [
-		[
-			"America/Havana"
-		],
-		"(UTC-05:00) Havana",
-		"Cuba Standard Time",
-		"Cuba Daylight Time",
-		true,
-		-300
-	],
-	"Asia/Baku": "Azerbaijan Standard Time",
-	"Asia/Ulaanbaatar": "Ulaanbaatar Standard Time",
-	"America/Argentina/Rio_Gallegos": "Argentina Standard Time",
-	"North Korea Standard Time": [
-		[
-			"Asia/Pyongyang"
-		],
-		"(UTC+08:30) Pyongyang",
-		"North Korea Standard Time",
-		"North Korea Daylight Time",
-		true,
-		510
-	],
-	"Indian/Maldives": "West Asia Standard Time",
-	"SA Western Standard Time": [
-		[
-			"America/La_Paz",
-			"America/Antigua",
-			"America/Anguilla",
-			"America/Aruba",
-			"America/Barbados",
-			"America/St_Barthelemy",
-			"America/Kralendijk",
-			"America/Manaus",
-			"America/Boa_Vista",
-			"America/Porto_Velho",
-			"America/Blanc-Sablon",
-			"America/Curacao",
-			"America/Dominica",
-			"America/Santo_Domingo",
-			"America/Grenada",
-			"America/Guadeloupe",
-			"America/Guyana",
-			"America/St_Kitts",
-			"America/St_Lucia",
-			"America/Marigot",
-			"America/Martinique",
-			"America/Montserrat",
-			"America/Puerto_Rico",
-			"America/Lower_Princes",
-			"America/Port_of_Spain",
-			"America/St_Vincent",
-			"America/Tortola",
-			"America/St_Thomas",
-			"Etc/GMT+4"
-		],
-		"(UTC-04:00) Georgetown, La Paz, Manaus, San Juan",
-		"SA Western Standard Time",
-		"SA Western Daylight Time",
-		false,
-		-240
-	],
-	"Central Pacific Standard Time": [
-		[
-			"Pacific/Guadalcanal",
-			"Antarctica/Casey",
-			"Antarctica/Macquarie",
-			"Pacific/Ponape",
-			"Pacific/Kosrae",
-			"Pacific/Noumea",
-			"Pacific/Efate",
-			"Etc/GMT-11"
-		],
-		"(UTC+11:00) Solomon Is., New Caledonia",
-		"Central Pacific Standard Time",
-		"Central Pacific Daylight Time",
-		false,
-		660
-	],
-	"America/Dawson_Creek": "US Mountain Standard Time",
-	"Africa/Dar_es_Salaam": "E. Africa Standard Time",
-	"America/Rankin_Inlet": "Central Standard Time",
-	"America/Antigua": "SA Western Standard Time",
-	"Asia/Thimphu": "Bangladesh Standard Time",
-	"Chatham Islands Standard Time": [
-		[
-			"Pacific/Chatham"
-		],
-		"(UTC+12:45) Chatham Islands",
-		"Chatham Islands Standard Time",
-		"Chatham Islands Daylight Time",
-		true,
-		765
-	],
-	"America/North_Dakota/New_Salem": "Central Standard Time",
-	"America/Ojinaga": "Mountain Standard Time",
-	"Africa/Asmera": "E. Africa Standard Time",
-	"Europe/San_Marino": "W. Europe Standard Time",
-	"Pacific/Pitcairn": "UTC-08",
-	"Europe/Isle_of_Man": "GMT Standard Time",
-	"North Asia Standard Time": [
-		[
-			"Asia/Krasnoyarsk",
-			"Asia/Novokuznetsk"
-		],
-		"(UTC+07:00) Krasnoyarsk",
-		"Russia TZ 6 Standard Time",
-		"Russia TZ 6 Daylight Time",
-		true,
-		420
-	],
-	"America/Danmarkshavn": "UTC",
-	"America/Mexico_City": "Central Standard Time (Mexico)",
-	"Africa/Banjul": "Greenwich Standard Time",
-	"Europe/Zurich": "W. Europe Standard Time",
-	"America/St_Johns": "Newfoundland Standard Time",
-	"Pacific/Apia": "Samoa Standard Time",
-	"Pacific/Niue": "UTC-11",
-	"Etc/GMT-3": "E. Africa Standard Time",
-	"America/Fortaleza": "SA Eastern Standard Time",
-	"China Standard Time": [
-		[
-			"Asia/Shanghai",
-			"Asia/Hong_Kong",
-			"Asia/Macau"
-		],
-		"(UTC+08:00) Beijing, Chongqing, Hong Kong, Urumqi",
-		"China Standard Time",
-		"China Daylight Time",
-		false,
-		480
-	],
-	"America/Mazatlan": "Mountain Standard Time (Mexico)",
-	"Asia/Samarkand": "West Asia Standard Time",
-	"America/Adak": "Aleutian Standard Time",
-	"Russia Time Zone 3": [
-		[
-			"Europe/Samara"
-		],
-		"(UTC+04:00) Izhevsk, Samara",
-		"Russia TZ 3 Standard Time",
-		"Russia TZ 3 Daylight Time",
-		true,
-		240
-	],
-	"Taipei Standard Time": [
-		[
-			"Asia/Taipei"
-		],
-		"(UTC+08:00) Taipei",
-		"Taipei Standard Time",
-		"Taipei Daylight Time",
-		false,
-		480
-	],
-	"America/Montreal": "Eastern Standard Time",
-	"Russia Time Zone 11": [
-		[
-			"Asia/Kamchatka",
-			"Asia/Anadyr"
-		],
-		"(UTC+12:00) Anadyr, Petropavlovsk-Kamchatsky",
-		"Russia TZ 11 Standard Time",
-		"Russia TZ 11 Daylight Time",
-		true,
-		720
-	],
-	"Arabian Standard Time": [
-		[
-			"Asia/Dubai",
-			"Asia/Muscat",
-			"Etc/GMT-4"
-		],
-		"(UTC+04:00) Abu Dhabi, Muscat",
-		"Arabian Standard Time",
-		"Arabian Daylight Time",
-		false,
-		240
-	],
-	"Asia/Oral": "West Asia Standard Time",
-	"Asia/Brunei": "Singapore Standard Time",
-	"Bangladesh Standard Time": [
-		[
-			"Asia/Dhaka",
-			"Asia/Thimphu"
-		],
-		"(UTC+06:00) Dhaka",
-		"Bangladesh Standard Time",
-		"Bangladesh Daylight Time",
-		true,
-		360
-	],
-	"America/Bahia_Banderas": "Central Standard Time (Mexico)",
-	"Africa/Khartoum": "E. Africa Standard Time",
-	"Asia/Hovd": "W. Mongolia Standard Time",
-	"Antarctica/Mawson": "West Asia Standard Time",
-	"Africa/Maseru": "South Africa Standard Time",
-	"Asia/Aqtau": "West Asia Standard Time",
-	"Europe/Chisinau": "E. Europe Standard Time",
-	"Africa/Douala": "W. Central Africa Standard Time",
-	"Asia/Hong_Kong": "China Standard Time",
-	"Africa/Ndjamena": "W. Central Africa Standard Time",
-	"Indian/Reunion": "Mauritius Standard Time",
-	"Asia/Krasnoyarsk": "North Asia Standard Time",
-	"America/Buenos_Aires": "Argentina Standard Time",
-	"America/Grand_Turk": "Turks And Caicos Standard Time",
-	"US Eastern Standard Time": [
-		[
-			"America/Indianapolis",
-			"America/Indiana/Marengo",
-			"America/Indiana/Vevay"
-		],
-		"(UTC-05:00) Indiana (East)",
-		"US Eastern Standard Time",
-		"US Eastern Daylight Time",
-		true,
-		-300
-	],
-	"Etc/GMT-6": "Central Asia Standard Time",
-	"Europe/Monaco": "W. Europe Standard Time",
-	"W. Europe Standard Time": [
-		[
-			"Europe/Berlin",
-			"Europe/Andorra",
-			"Europe/Vienna",
-			"Europe/Zurich",
-			"Europe/Busingen",
-			"Europe/Gibraltar",
-			"Europe/Rome",
-			"Europe/Vaduz",
-			"Europe/Luxembourg",
-			"Europe/Monaco",
-			"Europe/Malta",
-			"Europe/Amsterdam",
-			"Europe/Oslo",
-			"Europe/Stockholm",
-			"Arctic/Longyearbyen",
-			"Europe/San_Marino",
-			"Europe/Vatican"
-		],
-		"(UTC+01:00) Amsterdam, Berlin, Bern, Rome, Stockholm, Vienna",
-		"W. Europe Standard Time",
-		"W. Europe Daylight Time",
-		true,
-		60
-	],
-	"America/Montevideo": "Montevideo Standard Time",
-	"America/St_Thomas": "SA Western Standard Time",
-	"Africa/Monrovia": "Greenwich Standard Time",
-	"Etc/GMT-8": "Singapore Standard Time",
-	"Saint Pierre Standard Time": [
-		[
-			"America/Miquelon"
-		],
-		"(UTC-03:00) Saint Pierre and Miquelon",
-		"Saint Pierre Standard Time",
-		"Saint Pierre Daylight Time",
-		true,
-		-180
-	],
-	"America/Coral_Harbour": "SA Pacific Standard Time",
-	"Africa/Djibouti": "E. Africa Standard Time",
-	"Asia/Kabul": "Afghanistan Standard Time",
-	"America/Port_of_Spain": "SA Western Standard Time",
-	"Atlantic/Reykjavik": "Greenwich Standard Time",
-	"Central Standard Time": [
-		[
-			"America/Chicago",
-			"America/Winnipeg",
-			"America/Rainy_River",
-			"America/Rankin_Inlet",
-			"America/Resolute",
-			"America/Matamoros",
-			"America/Indiana/Knox",
-			"America/Indiana/Tell_City",
-			"America/Menominee",
-			"America/North_Dakota/Beulah",
-			"America/North_Dakota/Center",
-			"America/North_Dakota/New_Salem",
-			"CST6CDT"
-		],
-		"(UTC-06:00) Central Time (US &amp; Canada)",
-		"Central Standard Time",
-		"Central Daylight Time",
-		true,
-		-360
-	],
-	"Australia/Melbourne": "AUS Eastern Standard Time",
-	"Africa/Freetown": "Greenwich Standard Time",
-	"Asia/Atyrau": "West Asia Standard Time",
-	"Africa/Lagos": "W. Central Africa Standard Time",
-	"Europe/Helsinki": "FLE Standard Time",
-	"Asia/Karachi": "Pakistan Standard Time",
-	"America/Regina": "Canada Central Standard Time",
-	"Tocantins Standard Time": [
-		[
-			"America/Araguaina"
-		],
-		"(UTC-03:00) Araguaina",
-		"Tocantins Standard Time",
-		"Tocantins Daylight Time",
-		true,
-		-180
-	],
-	"Antarctica/Rothera": "SA Eastern Standard Time",
-	"Etc/GMT+3": "SA Eastern Standard Time",
-	"Dateline Standard Time": [
-		[
-			"Etc/GMT+12"
-		],
-		"(UTC-12:00) International Date Line West",
-		"Dateline Standard Time",
-		"Dateline Daylight Time",
-		false,
-		-720
-	],
-	"Australia/Sydney": "AUS Eastern Standard Time",
-	"Etc/GMT+12": "Dateline Standard Time",
-	"PST8PDT": "Pacific Standard Time",
-	"Canada Central Standard Time": [
-		[
-			"America/Regina",
-			"America/Swift_Current"
-		],
-		"(UTC-06:00) Saskatchewan",
-		"Canada Central Standard Time",
-		"Canada Central Daylight Time",
-		false,
-		-360
-	],
-	"Lord Howe Standard Time": [
-		[
-			"Australia/Lord_Howe"
-		],
-		"(UTC+10:30) Lord Howe Island",
-		"Lord Howe Standard Time",
-		"Lord Howe Daylight Time",
-		true,
-		630
-	],
-	"Europe/Busingen": "W. Europe Standard Time",
-	"Turkey Standard Time": [
-		[
-			"Europe/Istanbul",
-			"Asia/Famagusta"
-		],
-		"(UTC+03:00) Istanbul",
-		"Turkey Standard Time",
-		"Turkey Daylight Time",
-		true,
-		180
-	],
-	"Africa/Bamako": "Greenwich Standard Time",
-	"America/Grenada": "SA Western Standard Time",
-	"America/Kralendijk": "SA Western Standard Time",
-	"America/Indiana/Petersburg": "Eastern Standard Time",
-	"Etc/GMT+4": "SA Western Standard Time",
-	"GTB Standard Time": [
-		[
-			"Europe/Bucharest",
-			"Asia/Nicosia",
-			"Europe/Athens"
-		],
-		"(UTC+02:00) Athens, Bucharest",
-		"GTB Standard Time",
-		"GTB Daylight Time",
-		true,
-		120
-	],
-	"Asia/Vientiane": "SE Asia Standard Time",
-	"Africa/Lusaka": "South Africa Standard Time",
-	"Europe/Oslo": "W. Europe Standard Time",
-	"Australia/Hobart": "Tasmania Standard Time",
-	"Central Asia Standard Time": [
-		[
-			"Asia/Almaty",
-			"Antarctica/Vostok",
-			"Asia/Urumqi",
-			"Indian/Chagos",
-			"Asia/Bishkek",
-			"Asia/Qyzylorda",
-			"Etc/GMT-6"
-		],
-		"(UTC+06:00) Astana",
-		"Central Asia Standard Time",
-		"Central Asia Daylight Time",
-		false,
-		360
-	],
-	"Etc/GMT+7": "US Mountain Standard Time",
-	"Kaliningrad Standard Time": [
-		[
-			"Europe/Kaliningrad"
-		],
-		"(UTC+02:00) Kaliningrad",
-		"Russia TZ 1 Standard Time",
-		"Russia TZ 1 Daylight Time",
-		true,
-		120
-	],
-	"Yakutsk Standard Time": [
-		[
-			"Asia/Yakutsk",
-			"Asia/Khandyga"
-		],
-		"(UTC+09:00) Yakutsk",
-		"Russia TZ 8 Standard Time",
-		"Russia TZ 8 Daylight Time",
-		true,
-		540
-	],
-	"Caucasus Standard Time": [
-		[
-			"Asia/Yerevan"
-		],
-		"(UTC+04:00) Yerevan",
-		"Caucasus Standard Time",
-		"Caucasus Daylight Time",
-		true,
-		240
-	],
-	"EST5EDT": "Eastern Standard Time",
-	"Egypt Standard Time": [
-		[
-			"Africa/Cairo"
-		],
-		"(UTC+02:00) Cairo",
-		"Egypt Standard Time",
-		"Egypt Daylight Time",
-		true,
-		120
-	],
-	"Europe/Dublin": "GMT Standard Time",
-	"Pacific/Norfolk": "Norfolk Standard Time",
-	"Arabic Standard Time": [
-		[
-			"Asia/Baghdad"
-		],
-		"(UTC+03:00) Baghdad",
-		"Arabic Standard Time",
-		"Arabic Daylight Time",
-		true,
-		180
-	],
-	"Antarctica/Casey": "Central Pacific Standard Time",
-	"America/Porto_Velho": "SA Western Standard Time",
-	"Pakistan Standard Time": [
-		[
-			"Asia/Karachi"
-		],
-		"(UTC+05:00) Islamabad, Karachi",
-		"Pakistan Standard Time",
-		"Pakistan Daylight Time",
-		true,
-		300
-	],
-	"SE Asia Standard Time": [
-		[
-			"Asia/Bangkok",
-			"Antarctica/Davis",
-			"Indian/Christmas",
-			"Asia/Jakarta",
-			"Asia/Pontianak",
-			"Asia/Phnom_Penh",
-			"Asia/Vientiane",
-			"Asia/Saigon",
-			"Etc/GMT-7"
-		],
-		"(UTC+07:00) Bangkok, Hanoi, Jakarta",
-		"SE Asia Standard Time",
-		"SE Asia Daylight Time",
-		false,
-		420
-	],
-	"Asia/Hebron": "West Bank Standard Time",
-	"Africa/Windhoek": "Namibia Standard Time",
-	"SA Eastern Standard Time": [
-		[
-			"America/Cayenne",
-			"Antarctica/Rothera",
-			"Antarctica/Palmer",
-			"America/Fortaleza",
-			"America/Belem",
-			"America/Maceio",
-			"America/Recife",
-			"America/Santarem",
-			"America/Punta_Arenas",
-			"Atlantic/Stanley",
-			"America/Paramaribo",
-			"Etc/GMT+3"
-		],
-		"(UTC-03:00) Cayenne, Fortaleza",
-		"SA Eastern Standard Time",
-		"SA Eastern Daylight Time",
-		false,
-		-180
-	],
-	"Asia/Tokyo": "Tokyo Standard Time",
-	"Pacific/Honolulu": "Hawaiian Standard Time",
-	"Asia/Magadan": "Magadan Standard Time",
-	"Omsk Standard Time": [
-		[
-			"Asia/Omsk"
-		],
-		"(UTC+06:00) Omsk",
-		"Omsk Standard Time",
-		"Omsk Daylight Time",
-		true,
-		360
-	],
-	"America/New_York": "Eastern Standard Time",
-	"Europe/Berlin": "W. Europe Standard Time",
-	"Easter Island Standard Time": [
-		[
-			"Pacific/Easter"
-		],
-		"(UTC-06:00) Easter Island",
-		"Easter Island Standard Time",
-		"Easter Island Daylight Time",
-		true,
-		-360
-	],
-	"Central America Standard Time": [
-		[
-			"America/Guatemala",
-			"America/Belize",
-			"America/Costa_Rica",
-			"Pacific/Galapagos",
-			"America/Tegucigalpa",
-			"America/Managua",
-			"America/El_Salvador",
-			"Etc/GMT+6"
-		],
-		"(UTC-06:00) Central America",
-		"Central America Standard Time",
-		"Central America Daylight Time",
-		false,
-		-360
-	],
-	"N. Central Asia Standard Time": [
-		[
-			"Asia/Novosibirsk"
-		],
-		"(UTC+07:00) Novosibirsk",
-		"Novosibirsk Standard Time",
-		"Novosibirsk Daylight Time",
-		true,
-		420
-	],
-	"Asia/Rangoon": "Myanmar Standard Time",
-	"America/Argentina/La_Rioja": "Argentina Standard Time",
-	"Myanmar Standard Time": [
-		[
-			"Asia/Rangoon",
-			"Indian/Cocos"
-		],
-		"(UTC+06:30) Yangon (Rangoon)",
-		"Myanmar Standard Time",
-		"Myanmar Daylight Time",
-		false,
-		390
-	],
-	"Etc/GMT-12": "UTC+12",
-	"Africa/Juba": "E. Africa Standard Time",
-	"Etc/GMT-11": "Central Pacific Standard Time",
-	"America/Yakutat": "Alaskan Standard Time",
-	"Pacific/Port_Moresby": "West Pacific Standard Time",
-	"Atlantic/South_Georgia": "UTC-02",
-	"Australia/Darwin": "AUS Central Standard Time",
-	"America/Nipigon": "Eastern Standard Time",
-	"America/Panama": "SA Pacific Standard Time",
-	"America/Cordoba": "Argentina Standard Time",
-	"Europe/Stockholm": "W. Europe Standard Time",
-	"America/Rio_Branco": "SA Pacific Standard Time",
-	"Europe/Prague": "Central Europe Standard Time",
-	"Antarctica/Palmer": "SA Eastern Standard Time",
-	"America/Whitehorse": "Pacific Standard Time",
-	"Pacific/Enderbury": "Tonga Standard Time",
-	"UTC+12": [
-		[
-			"Etc/GMT-12",
-			"Pacific/Tarawa",
-			"Pacific/Majuro",
-			"Pacific/Kwajalein",
-			"Pacific/Nauru",
-			"Pacific/Funafuti",
-			"Pacific/Wake",
-			"Pacific/Wallis"
-		],
-		"(UTC+12:00) Coordinated Universal Time+12",
-		"UTC+12",
-		"UTC+12",
-		false,
-		720
-	],
-	"UTC-09": [
-		[
-			"Etc/GMT+9",
-			"Pacific/Gambier"
-		],
-		"(UTC-09:00) Coordinated Universal Time-09",
-		"UTC-09",
-		"UTC-09",
-		false,
-		-540
-	],
-	"AUS Central Standard Time": [
-		[
-			"Australia/Darwin"
-		],
-		"(UTC+09:30) Darwin",
-		"AUS Central Standard Time",
-		"AUS Central Daylight Time",
-		false,
-		570
-	],
-	"Line Islands Standard Time": [
-		[
-			"Pacific/Kiritimati",
-			"Etc/GMT-14"
-		],
-		"(UTC+14:00) Kiritimati Island",
-		"Line Islands Standard Time",
-		"Line Islands Daylight Time",
-		false,
-		840
-	],
-	"Africa/Mbabane": "South Africa Standard Time",
-	"Asia/Dushanbe": "West Asia Standard Time",
-	"America/Indiana/Marengo": "US Eastern Standard Time",
-	"America/Punta_Arenas": "SA Eastern Standard Time",
-	"America/Maceio": "SA Eastern Standard Time",
-	"America/Menominee": "Central Standard Time",
-	"America/Anchorage": "Alaskan Standard Time",
-	"Norfolk Standard Time": [
-		[
-			"Pacific/Norfolk"
-		],
-		"(UTC+11:00) Norfolk Island",
-		"Norfolk Standard Time",
-		"Norfolk Daylight Time",
-		true,
-		660
-	],
-	"America/Monterrey": "Central Standard Time (Mexico)",
-	"America/Paramaribo": "SA Eastern Standard Time",
-	"Africa/Gaborone": "South Africa Standard Time",
-	"Morocco Standard Time": [
-		[
-			"Africa/Casablanca",
-			"Africa/El_Aaiun"
-		],
-		"(UTC+00:00) Casablanca",
-		"Morocco Standard Time",
-		"Morocco Daylight Time",
-		true,
-		0
-	],
-	"Australia/Brisbane": "E. Australia Standard Time",
-	"West Bank Standard Time": [
-		[
-			"Asia/Hebron",
-			"Asia/Gaza"
-		],
-		"(UTC+02:00) Gaza, Hebron",
-		"West Bank Gaza Standard Time",
-		"West Bank Gaza Daylight Time",
-		true,
-		120
-	],
-	"America/St_Barthelemy": "SA Western Standard Time",
-	"America/Montserrat": "SA Western Standard Time",
-	"America/St_Vincent": "SA Western Standard Time",
-	"America/Goose_Bay": "Atlantic Standard Time",
-	"America/Argentina/Salta": "Argentina Standard Time",
-	"Europe/Malta": "W. Europe Standard Time",
-	"Australia/Perth": "W. Australia Standard Time",
-	"Azerbaijan Standard Time": [
-		[
-			"Asia/Baku"
-		],
-		"(UTC+04:00) Baku",
-		"Azerbaijan Standard Time",
-		"Azerbaijan Daylight Time",
-		true,
-		240
-	],
-	"Asia/Katmandu": "Nepal Standard Time",
-	"Pacific/Bougainville": "Bougainville Standard Time",
-	"Asia/Phnom_Penh": "SE Asia Standard Time",
-	"Africa/Porto-Novo": "W. Central Africa Standard Time",
-	"America/Tortola": "SA Western Standard Time",
-	"Tomsk Standard Time": [
-		[
-			"Asia/Tomsk"
-		],
-		"(UTC+07:00) Tomsk",
-		"Tomsk Standard Time",
-		"Tomsk Daylight Time",
-		true,
-		420
-	],
-	"Romance Standard Time": [
-		[
-			"Europe/Paris",
-			"Europe/Brussels",
-			"Europe/Copenhagen",
-			"Europe/Madrid",
-			"Africa/Ceuta"
-		],
-		"(UTC+01:00) Brussels, Copenhagen, Madrid, Paris",
-		"Romance Standard Time",
-		"Romance Daylight Time",
-		true,
-		60
-	],
-	"America/Matamoros": "Central Standard Time",
-	"America/Bahia": "Bahia Standard Time",
-	"Indian/Chagos": "Central Asia Standard Time",
-	"America/Godthab": "Greenland Standard Time",
-	"Africa/Luanda": "W. Central Africa Standard Time",
-	"America/Resolute": "Central Standard Time",
-	"Asia/Omsk": "Omsk Standard Time",
-	"Indian/Christmas": "SE Asia Standard Time",
-	"Africa/El_Aaiun": "Morocco Standard Time",
-	"America/Metlakatla": "Alaskan Standard Time",
-	"Europe/Athens": "GTB Standard Time",
-	"Asia/Kuala_Lumpur": "Singapore Standard Time",
-	"Europe/Zaporozhye": "FLE Standard Time",
-	"Asia/Khandyga": "Yakutsk Standard Time",
-	"Arab Standard Time": [
-		[
-			"Asia/Riyadh",
-			"Asia/Bahrain",
-			"Asia/Kuwait",
-			"Asia/Qatar",
-			"Asia/Aden"
-		],
-		"(UTC+03:00) Kuwait, Riyadh",
-		"Arab Standard Time",
-		"Arab Daylight Time",
-		false,
-		180
-	],
-	"America/Moncton": "Atlantic Standard Time",
-	"Europe/Bratislava": "Central Europe Standard Time",
-	"Etc/GMT-2": "South Africa Standard Time",
-	"Antarctica/Syowa": "E. Africa Standard Time",
-	"Etc/GMT+11": "UTC-11",
-	"America/Argentina/San_Juan": "Argentina Standard Time",
-	"Asia/Ashgabat": "West Asia Standard Time",
-	"Indian/Comoro": "E. Africa Standard Time",
-	"Asia/Shanghai": "China Standard Time",
-	"Asia/Yakutsk": "Yakutsk Standard Time",
-	"Aus Central W. Standard Time": [
-		[
-			"Australia/Eucla"
-		],
-		"(UTC+08:45) Eucla",
-		"Aus Central W. Standard Time",
-		"Aus Central W. Daylight Time",
-		false,
-		525
-	],
-	"America/Managua": "Central America Standard Time",
-	"Africa/Nouakchott": "Greenwich Standard Time",
-	"America/North_Dakota/Center": "Central Standard Time",
-	"Africa/Algiers": "W. Central Africa Standard Time",
-	"Europe/Rome": "W. Europe Standard Time",
-	"Pacific/Wallis": "UTC+12",
-	"Europe/Tallinn": "FLE Standard Time",
-	"Australia/Broken_Hill": "Cen. Australia Standard Time",
-	"Etc/GMT-14": "Line Islands Standard Time",
-	"Africa/Casablanca": "Morocco Standard Time",
-	"Pacific Standard Time": [
-		[
-			"America/Los_Angeles",
-			"America/Vancouver",
-			"America/Dawson",
-			"America/Whitehorse",
-			"PST8PDT"
-		],
-		"(UTC-08:00) Pacific Time (US &amp; Canada)",
-		"Pacific Standard Time",
-		"Pacific Daylight Time",
-		true,
-		-480
-	],
-	"Pacific/Galapagos": "Central America Standard Time",
-	"Africa/Bissau": "Greenwich Standard Time",
-	"Pacific/Fiji": "Fiji Standard Time",
-	"Asia/Kuwait": "Arab Standard Time",
-	"America/Cuiaba": "Central Brazilian Standard Time",
-	"Pacific/Funafuti": "UTC+12",
-	"Etc/GMT-7": "SE Asia Standard Time",
-	"Africa/Kampala": "E. Africa Standard Time",
-	"Europe/Istanbul": "Turkey Standard Time",
-	"America/Thunder_Bay": "Eastern Standard Time",
-	"America/Creston": "US Mountain Standard Time",
-	"Pacific/Easter": "Easter Island Standard Time",
-	"Middle East Standard Time": [
-		[
-			"Asia/Beirut"
-		],
-		"(UTC+02:00) Beirut",
-		"Middle East Standard Time",
-		"Middle East Daylight Time",
-		true,
-		120
-	],
-	"America/Detroit": "Eastern Standard Time",
-	"America/Cancun": "Eastern Standard Time (Mexico)",
-	"Asia/Macau": "China Standard Time",
-	"Eastern Standard Time (Mexico)": [
-		[
-			"America/Cancun"
-		],
-		"(UTC-05:00) Chetumal",
-		"Eastern Standard Time (Mexico)",
-		"Eastern Daylight Time (Mexico)",
-		true,
-		-300
-	],
-	"America/Indiana/Vincennes": "Eastern Standard Time",
-	"Asia/Bahrain": "Arab Standard Time",
-	"Argentina Standard Time": [
-		[
-			"America/Buenos_Aires",
-			"America/Argentina/La_Rioja",
-			"America/Argentina/Rio_Gallegos",
-			"America/Argentina/Salta",
-			"America/Argentina/San_Juan",
-			"America/Argentina/San_Luis",
-			"America/Argentina/Tucuman",
-			"America/Argentina/Ushuaia",
-			"America/Catamarca",
-			"America/Cordoba",
-			"America/Jujuy",
-			"America/Mendoza"
-		],
-		"(UTC-03:00) City of Buenos Aires",
-		"Argentina Standard Time",
-		"Argentina Daylight Time",
-		true,
-		-180
-	],
-	"Asia/Irkutsk": "North Asia East Standard Time",
-	"Asia/Novosibirsk": "N. Central Asia Standard Time",
-	"America/Noronha": "UTC-02",
-	"Africa/Maputo": "South Africa Standard Time",
-	"America/Sao_Paulo": "E. South America Standard Time",
-	"Europe/Podgorica": "Central Europe Standard Time",
-	"Etc/GMT+2": "UTC-02",
-	"Pacific/Marquesas": "Marquesas Standard Time",
-	"America/Blanc-Sablon": "SA Western Standard Time",
-	"Asia/Yerevan": "Caucasus Standard Time",
-	"Atlantic/Cape_Verde": "Cape Verde Standard Time",
-	"Pacific/Auckland": "New Zealand Standard Time",
-	"America/Phoenix": "US Mountain Standard Time",
-	"Pacific/Truk": "West Pacific Standard Time",
-	"Greenland Standard Time": [
-		[
-			"America/Godthab"
-		],
-		"(UTC-03:00) Greenland",
-		"Greenland Standard Time",
-		"Greenland Daylight Time",
-		true,
-		-180
-	],
-	"Africa/Mogadishu": "E. Africa Standard Time",
-	"Pacific SA Standard Time": [
-		[
-			"America/Santiago"
-		],
-		"(UTC-04:00) Santiago",
-		"Pacific SA Standard Time",
-		"Pacific SA Daylight Time",
-		true,
-		-240
-	],
-	"Asia/Urumqi": "Central Asia Standard Time",
-	"Asia/Chita": "Transbaikal Standard Time",
-	"America/Lima": "SA Pacific Standard Time",
-	"Australia/Eucla": "Aus Central W. Standard Time",
-	"Asia/Damascus": "Syria Standard Time",
-	"Europe/Minsk": "Belarus Standard Time",
-	"Africa/Bujumbura": "South Africa Standard Time",
-	"Asia/Makassar": "Singapore Standard Time",
-	"Saratov Standard Time": [
-		null,
-		"(UTC+04:00) Saratov",
-		"Saratov Standard Time",
-		"Saratov Daylight Time",
-		true,
-		240
-	],
-	"Ulaanbaatar Standard Time": [
-		[
-			"Asia/Ulaanbaatar",
-			"Asia/Choibalsan"
-		],
-		"(UTC+08:00) Ulaanbaatar",
-		"Ulaanbaatar Standard Time",
-		"Ulaanbaatar Daylight Time",
-		true,
-		480
-	],
-	"Asia/Amman": "Jordan Standard Time",
-	"Tonga Standard Time": [
-		[
-			"Pacific/Tongatapu",
-			"Pacific/Enderbury",
-			"Pacific/Fakaofo",
-			"Etc/GMT-13"
-		],
-		"(UTC+13:00) Nuku'alofa",
-		"Tonga Standard Time",
-		"Tonga Daylight Time",
-		true,
-		780
-	],
-	"Atlantic/St_Helena": "Greenwich Standard Time",
-	"America/Santiago": "Pacific SA Standard Time",
-	"UTC-02": [
-		[
-			"Etc/GMT+2",
-			"America/Noronha",
-			"Atlantic/South_Georgia"
-		],
-		"(UTC-02:00) Coordinated Universal Time-02",
-		"UTC-02",
-		"UTC-02",
-		false,
-		-120
-	],
-	"Europe/Luxembourg": "W. Europe Standard Time",
-	"Africa/Cairo": "Egypt Standard Time",
-	"America/Recife": "SA Eastern Standard Time",
-	"America/Indiana/Tell_City": "Central Standard Time",
-	"Africa/Niamey": "W. Central Africa Standard Time",
-	"America/Juneau": "Alaskan Standard Time",
-	"Asia/Qyzylorda": "Central Asia Standard Time",
-	"Asia/Bangkok": "SE Asia Standard Time",
-	"Magadan Standard Time": [
-		[
-			"Asia/Magadan"
-		],
-		"(UTC+11:00) Magadan",
-		"Magadan Standard Time",
-		"Magadan Daylight Time",
-		true,
-		660
-	],
-	"Africa/Johannesburg": "South Africa Standard Time",
-	"America/Santa_Isabel": "Pacific Standard Time (Mexico)",
-	"Astrakhan Standard Time": [
-		[
-			"Europe/Astrakhan",
-			"Europe/Saratov",
-			"Europe/Ulyanovsk"
-		],
-		"(UTC+04:00) Astrakhan, Ulyanovsk",
-		"Astrakhan Standard Time",
-		"Astrakhan Daylight Time",
-		true,
-		240
-	],
-	"America/Cayenne": "SA Eastern Standard Time",
-	"Africa/Tripoli": "Libya Standard Time",
-	"Africa/Bangui": "W. Central Africa Standard Time",
-	"Asia/Tomsk": "Tomsk Standard Time",
-	"Central Brazilian Standard Time": [
-		[
-			"America/Cuiaba",
-			"America/Campo_Grande"
-		],
-		"(UTC-04:00) Cuiaba",
-		"Central Brazilian Standard Time",
-		"Central Brazilian Daylight Time",
-		true,
-		-240
-	],
-	"Africa/Harare": "South Africa Standard Time",
-	"Europe/Kaliningrad": "Kaliningrad Standard Time",
-	"Israel Standard Time": [
-		[
-			"Asia/Jerusalem"
-		],
-		"(UTC+02:00) Jerusalem",
-		"Jerusalem Standard Time",
-		"Jerusalem Daylight Time",
-		true,
-		120
-	],
-	"E. Australia Standard Time": [
-		[
-			"Australia/Brisbane",
-			"Australia/Lindeman"
-		],
-		"(UTC+10:00) Brisbane",
-		"E. Australia Standard Time",
-		"E. Australia Daylight Time",
-		false,
-		600
-	],
-	"America/Marigot": "SA Western Standard Time",
-	"Asia/Dhaka": "Bangladesh Standard Time",
-	"Etc/GMT-10": "West Pacific Standard Time",
-	"Europe/Paris": "Romance Standard Time",
-	"America/Nome": "Alaskan Standard Time",
-	"America/Belem": "SA Eastern Standard Time",
-	"Africa/Sao_Tome": "Greenwich Standard Time",
-	"Asia/Taipei": "Taipei Standard Time",
-	"Pacific/Chatham": "Chatham Islands Standard Time",
-	"Asia/Vladivostok": "Vladivostok Standard Time",
-	"Vladivostok Standard Time": [
-		[
-			"Asia/Vladivostok",
-			"Asia/Ust-Nera"
-		],
-		"(UTC+10:00) Vladivostok",
-		"Russia TZ 9 Standard Time",
-		"Russia TZ 9 Daylight Time",
-		true,
-		600
-	],
-	"America/Tijuana": "Pacific Standard Time (Mexico)",
-	"Etc/GMT-13": "Tonga Standard Time",
-	"Pacific/Guadalcanal": "Central Pacific Standard Time",
-	"Indian/Antananarivo": "E. Africa Standard Time",
-	"Africa/Ceuta": "Romance Standard Time",
-	"America/Jujuy": "Argentina Standard Time",
-	"Cape Verde Standard Time": [
-		[
-			"Atlantic/Cape_Verde",
-			"Etc/GMT+1"
-		],
-		"(UTC-01:00) Cabo Verde Is.",
-		"Cabo Verde Standard Time",
-		"Cabo Verde Daylight Time",
-		false,
-		-60
-	],
-	"GMT Standard Time": [
-		[
-			"Europe/London",
-			"Atlantic/Canary",
-			"Atlantic/Faeroe",
-			"Europe/Guernsey",
-			"Europe/Dublin",
-			"Europe/Isle_of_Man",
-			"Europe/Jersey",
-			"Europe/Lisbon",
-			"Atlantic/Madeira"
-		],
-		"(UTC+00:00) Dublin, Edinburgh, Lisbon, London",
-		"GMT Standard Time",
-		"GMT Daylight Time",
-		true,
-		0
-	],
-	"Bahia Standard Time": [
-		[
-			"America/Bahia"
-		],
-		"(UTC-03:00) Salvador",
-		"Bahia Standard Time",
-		"Bahia Daylight Time",
-		true,
-		-180
-	]
-}
-
+export let TimeZoneMappingData = {"America/Aruba":"SA Western Standard Time","Europe/Copenhagen":"Romance Standard Time","Europe/Brussels":"Romance Standard Time","Africa/Tunis":"W. Central Africa Standard Time","America/Pangnirtung":"Eastern Standard Time","Africa/Malabo":"W. Central Africa Standard Time","America/Guyana":"SA Western Standard Time","W. Mongolia Standard Time":[["Asia/Hovd"],"(UTC+07:00) Hovd","W. Mongolia Standard Time","W. Mongolia Daylight Time",true,420],"Russia Time Zone 10":[["Asia/Srednekolymsk"],"(UTC+11:00) Chokurdakh","Russia TZ 10 Standard Time","Russia TZ 10 Daylight Time",true,660],"Ekaterinburg Standard Time":[["Asia/Yekaterinburg"],"(UTC+05:00) Ekaterinburg","Russia TZ 4 Standard Time","Russia TZ 4 Daylight Time",true,300],"Australia/Lindeman":"E. Australia Standard Time","Asia/Famagusta":"Turkey Standard Time","America/Mendoza":"Argentina Standard Time","Indian/Cocos":"Myanmar Standard Time","America/North_Dakota/Beulah":"Central Standard Time","America/Los_Angeles":"Pacific Standard Time","Sakhalin Standard Time":[["Asia/Sakhalin"],"(UTC+11:00) Sakhalin","Sakhalin Standard Time","Sakhalin Daylight Time",true,660],"Altai Standard Time":[["Asia/Barnaul"],"(UTC+07:00) Barnaul, Gorno-Altaysk","Altai Standard Time","Altai Daylight Time",true,420],"Pacific/Guam":"West Pacific Standard Time","Pacific/Nauru":"UTC+12","Africa/Brazzaville":"W. Central Africa Standard Time","Europe/Jersey":"GMT Standard Time","Newfoundland Standard Time":[["America/St_Johns"],"(UTC-03:30) Newfoundland","Newfoundland Standard Time","Newfoundland Daylight Time",true,-210],"Europe/Vaduz":"W. Europe Standard Time","Pacific/Ponape":"Central Pacific Standard Time","America/Indiana/Knox":"Central Standard Time","America/Argentina/Ushuaia":"Argentina Standard Time","Tasmania Standard Time":[["Australia/Hobart","Australia/Currie"],"(UTC+10:00) Hobart","Tasmania Standard Time","Tasmania Daylight Time",true,600],"Asia/Jakarta":"SE Asia Standard Time","Europe/Vilnius":"FLE Standard Time","Africa/Kigali":"South Africa Standard Time","America/St_Kitts":"SA Western Standard Time","Indian/Kerguelen":"West Asia Standard Time","Africa/Libreville":"W. Central Africa Standard Time","West Pacific Standard Time":[["Pacific/Port_Moresby","Antarctica/DumontDUrville","Pacific/Truk","Pacific/Guam","Pacific/Saipan","Etc/GMT-10"],"(UTC+10:00) Guam, Port Moresby","West Pacific Standard Time","West Pacific Daylight Time",false,600],"Atlantic Standard Time":[["America/Halifax","Atlantic/Bermuda","America/Glace_Bay","America/Goose_Bay","America/Moncton","America/Thule"],"(UTC-04:00) Atlantic Time (Canada)","Atlantic Standard Time","Atlantic Daylight Time",true,-240],"W. Central Africa Standard Time":[["Africa/Lagos","Africa/Luanda","Africa/Porto-Novo","Africa/Kinshasa","Africa/Bangui","Africa/Brazzaville","Africa/Douala","Africa/Algiers","Africa/Libreville","Africa/Malabo","Africa/Niamey","Africa/Ndjamena","Africa/Tunis","Etc/GMT-1"],"(UTC+01:00) West Central Africa","W. Central Africa Standard Time","W. Central Africa Daylight Time",false,60],"Etc/GMT+8":"UTC-08","Atlantic/Faeroe":"GMT Standard Time","America/Sitka":"Alaskan Standard Time","UTC":[["Etc/GMT","America/Danmarkshavn","Etc/UTC"],"(UTC) Coordinated Universal Time","Coordinated Universal Time","Coordinated Universal Time",false,0],"Fiji Standard Time":[["Pacific/Fiji"],"(UTC+12:00) Fiji","Fiji Standard Time","Fiji Daylight Time",true,720],"Pacific/Kosrae":"Central Pacific Standard Time","West Asia Standard Time":[["Asia/Tashkent","Antarctica/Mawson","Asia/Oral","Asia/Aqtau","Asia/Aqtobe","Asia/Atyrau","Indian/Maldives","Indian/Kerguelen","Asia/Dushanbe","Asia/Ashgabat","Asia/Samarkand","Etc/GMT-5"],"(UTC+05:00) Ashgabat, Tashkent","West Asia Standard Time","West Asia Daylight Time",false,300],"Europe/Belgrade":"Central Europe Standard Time","Mid-Atlantic Standard Time":[null,"(UTC-02:00) Mid-Atlantic - Old","Mid-Atlantic Standard Time","Mid-Atlantic Daylight Time",true,-120],"Magallanes Standard Time":[null,"(UTC-03:00) Punta Arenas","Magallanes Standard Time","Magallanes Daylight Time",true,-180],"Kamchatka Standard Time":[null,"(UTC+12:00) Petropavlovsk-Kamchatsky - Old","Kamchatka Standard Time","Kamchatka Daylight Time",true,720],"America/Guatemala":"Central America Standard Time","Asia/Singapore":"Singapore Standard Time","Indian/Mayotte":"E. Africa Standard Time","Nepal Standard Time":[["Asia/Katmandu"],"(UTC+05:45) Kathmandu","Nepal Standard Time","Nepal Daylight Time",false,345],"UTC-11":[["Etc/GMT+11","Pacific/Pago_Pago","Pacific/Niue","Pacific/Midway"],"(UTC-11:00) Coordinated Universal Time-11","UTC-11","UTC-11",false,-660],"Asia/Qatar":"Arab Standard Time","Georgian Standard Time":[["Asia/Tbilisi"],"(UTC+04:00) Tbilisi","Georgian Standard Time","Georgian Daylight Time",false,240],"Europe/Simferopol":"Russian Standard Time","Etc/GMT+10":"Hawaiian Standard Time","Australia/Adelaide":"Cen. Australia Standard Time","America/Fort_Nelson":"US Mountain Standard Time","Transbaikal Standard Time":[["Asia/Chita"],"(UTC+09:00) Chita","Transbaikal Standard Time","Transbaikal Daylight Time",true,540],"Aleutian Standard Time":[["America/Adak"],"(UTC-10:00) Aleutian Islands","Aleutian Standard Time","Aleutian Daylight Time",true,-600],"America/Cayman":"SA Pacific Standard Time","Pacific Standard Time (Mexico)":[["America/Tijuana","America/Santa_Isabel"],"(UTC-08:00) Baja California","Pacific Standard Time (Mexico)","Pacific Daylight Time (Mexico)",true,-480],"America/Thule":"Atlantic Standard Time","America/Puerto_Rico":"SA Western Standard Time","Asia/Dili":"Tokyo Standard Time","Pacific/Kiritimati":"Line Islands Standard Time","Europe/Ljubljana":"Central Europe Standard Time","Europe/Tirane":"Central Europe Standard Time","Etc/GMT-5":"West Asia Standard Time","Etc/GMT+9":"UTC-09","Europe/Gibraltar":"W. Europe Standard Time","America/Manaus":"SA Western Standard Time","America/Argentina/San_Luis":"Argentina Standard Time","Venezuela Standard Time":[["America/Caracas"],"(UTC-04:00) Caracas","Venezuela Standard Time","Venezuela Daylight Time",true,-240],"Cen. Australia Standard Time":[["Australia/Adelaide","Australia/Broken_Hill"],"(UTC+09:30) Adelaide","Cen. Australia Standard Time","Cen. Australia Daylight Time",true,570],"America/Guayaquil":"SA Pacific Standard Time","Afghanistan Standard Time":[["Asia/Kabul"],"(UTC+04:30) Kabul","Afghanistan Standard Time","Afghanistan Daylight Time",false,270],"Mauritius Standard Time":[["Indian/Mauritius","Indian/Reunion","Indian/Mahe"],"(UTC+04:00) Port Louis","Mauritius Standard Time","Mauritius Daylight Time",true,240],"New Zealand Standard Time":[["Pacific/Auckland","Antarctica/McMurdo"],"(UTC+12:00) Auckland, Wellington","New Zealand Standard Time","New Zealand Daylight Time",true,720],"US Mountain Standard Time":[["America/Phoenix","America/Dawson_Creek","America/Creston","America/Fort_Nelson","America/Hermosillo","Etc/GMT+7"],"(UTC-07:00) Arizona","US Mountain Standard Time","US Mountain Daylight Time",false,-420],"Tokyo Standard Time":[["Asia/Tokyo","Asia/Jayapura","Pacific/Palau","Asia/Dili","Etc/GMT-9"],"(UTC+09:00) Osaka, Sapporo, Tokyo","Tokyo Standard Time","Tokyo Daylight Time",false,540],"Asia/Sakhalin":"Sakhalin Standard Time","Europe/Astrakhan":"Astrakhan Standard Time","America/Catamarca":"Argentina Standard Time","Africa/Lubumbashi":"South Africa Standard Time","America/Boise":"Mountain Standard Time","America/Glace_Bay":"Atlantic Standard Time","America/Tegucigalpa":"Central America Standard Time","America/Chicago":"Central Standard Time","Etc/GMT+6":"Central America Standard Time","Antarctica/Macquarie":"Central Pacific Standard Time","Europe/Kirov":"Russian Standard Time","America/Campo_Grande":"Central Brazilian Standard Time","Indian/Mauritius":"Mauritius Standard Time","America/La_Paz":"SA Western Standard Time","Russian Standard Time":[["Europe/Moscow","Europe/Kirov","Europe/Volgograd","Europe/Simferopol"],"(UTC+03:00) Moscow, St. Petersburg, Volgograd","Russia TZ 2 Standard Time","Russia TZ 2 Daylight Time",true,180],"America/Miquelon":"Saint Pierre Standard Time","Asia/Tbilisi":"Georgian Standard Time","Asia/Aden":"Arab Standard Time","Asia/Tehran":"Iran Standard Time","Asia/Colombo":"Sri Lanka Standard Time","America/Lower_Princes":"SA Western Standard Time","Azores Standard Time":[["Atlantic/Azores","America/Scoresbysund"],"(UTC-01:00) Azores","Azores Standard Time","Azores Daylight Time",true,-60],"America/Santo_Domingo":"SA Western Standard Time","Iran Standard Time":[["Asia/Tehran"],"(UTC+03:30) Tehran","Iran Standard Time","Iran Daylight Time",true,210],"Mountain Standard Time (Mexico)":[["America/Chihuahua","America/Mazatlan"],"(UTC-07:00) Chihuahua, La Paz, Mazatlan","Mountain Standard Time (Mexico)","Mountain Daylight Time (Mexico)",true,-420],"Central Europe Standard Time":[["Europe/Budapest","Europe/Tirane","Europe/Prague","Europe/Podgorica","Europe/Belgrade","Europe/Ljubljana","Europe/Bratislava"],"(UTC+01:00) Belgrade, Bratislava, Budapest, Ljubljana, Prague","Central Europe Standard Time","Central Europe Daylight Time",true,60],"Asia/Beirut":"Middle East Standard Time","America/Denver":"Mountain Standard Time","America/Halifax":"Atlantic Standard Time","America/Barbados":"SA Western Standard Time","Pacific/Noumea":"Central Pacific Standard Time","Jordan Standard Time":[["Asia/Amman"],"(UTC+02:00) Amman","Jordan Standard Time","Jordan Daylight Time",true,120],"Singapore Standard Time":[["Asia/Singapore","Asia/Brunei","Asia/Makassar","Asia/Kuala_Lumpur","Asia/Kuching","Asia/Manila","Etc/GMT-8"],"(UTC+08:00) Kuala Lumpur, Singapore","Malay Peninsula Standard Time","Malay Peninsula Daylight Time",false,480],"Pacific/Rarotonga":"Hawaiian Standard Time","Asia/Saigon":"SE Asia Standard Time","Europe/Lisbon":"GMT Standard Time","America/Jamaica":"SA Pacific Standard Time","Atlantic/Stanley":"SA Eastern Standard Time","Europe/Sarajevo":"Central European Standard Time","Africa/Abidjan":"Greenwich Standard Time","Europe/London":"GMT Standard Time","Australia/Lord_Howe":"Lord Howe Standard Time","Africa/Kinshasa":"W. Central Africa Standard Time","Africa/Accra":"Greenwich Standard Time","India Standard Time":[["Asia/Calcutta"],"(UTC+05:30) Chennai, Kolkata, Mumbai, New Delhi","India Standard Time","India Daylight Time",false,330],"Europe/Kiev":"FLE Standard Time","America/Caracas":"Venezuela Standard Time","Europe/Guernsey":"GMT Standard Time","Africa/Nairobi":"E. Africa Standard Time","Asia/Gaza":"West Bank Standard Time","America/Kentucky/Monticello":"Eastern Standard Time","Europe/Sofia":"FLE Standard Time","America/Edmonton":"Mountain Standard Time","Asia/Almaty":"Central Asia Standard Time","Asia/Anadyr":"Russia Time Zone 11","Asia/Pontianak":"SE Asia Standard Time","Europe/Madrid":"Romance Standard Time","Asia/Kamchatka":"Russia Time Zone 11","Atlantic/Bermuda":"Atlantic Standard Time","Namibia Standard Time":[["Africa/Windhoek"],"(UTC+01:00) Windhoek","Namibia Standard Time","Namibia Daylight Time",true,60],"Pacific/Tarawa":"UTC+12","Montevideo Standard Time":[["America/Montevideo"],"(UTC-03:00) Montevideo","Montevideo Standard Time","Montevideo Daylight Time",true,-180],"America/Costa_Rica":"Central America Standard Time","Hawaiian Standard Time":[["Pacific/Honolulu","Pacific/Rarotonga","Pacific/Tahiti","Pacific/Johnston","Etc/GMT+10"],"(UTC-10:00) Hawaii","Hawaiian Standard Time","Hawaiian Daylight Time",false,-600],"Asia/Calcutta":"India Standard Time","Asia/Pyongyang":"North Korea Standard Time","Pacific/Palau":"Tokyo Standard Time","America/Asuncion":"Paraguay Standard Time","Sri Lanka Standard Time":[["Asia/Colombo"],"(UTC+05:30) Sri Jayawardenepura","Sri Lanka Standard Time","Sri Lanka Daylight Time",false,330],"Asia/Dubai":"Arabian Standard Time","Mountain Standard Time":[["America/Denver","America/Edmonton","America/Cambridge_Bay","America/Inuvik","America/Yellowknife","America/Ojinaga","America/Boise","MST7MDT"],"(UTC-07:00) Mountain Time (US \u0026amp; Canada)","Mountain Standard Time","Mountain Daylight Time",true,-420],"America/Havana":"Cuba Standard Time","Asia/Jerusalem":"Israel Standard Time","Pacific/Gambier":"UTC-09","America/Araguaina":"Tocantins Standard Time","Pacific/Midway":"UTC-11","Asia/Manila":"Singapore Standard Time","MST7MDT":"Mountain Standard Time","Europe/Bucharest":"GTB Standard Time","Asia/Baghdad":"Arabic Standard Time","Asia/Novokuznetsk":"North Asia Standard Time","Antarctica/DumontDUrville":"West Pacific Standard Time","Africa/Blantyre":"South Africa Standard Time","Libya Standard Time":[["Africa/Tripoli"],"(UTC+02:00) Tripoli","Libya Standard Time","Libya Daylight Time",true,120],"Samoa Standard Time":[["Pacific/Apia"],"(UTC+13:00) Samoa","Samoa Standard Time","Samoa Daylight Time",true,780],"Pacific/Efate":"Central Pacific Standard Time","Europe/Volgograd":"Russian Standard Time","America/Argentina/Tucuman":"Argentina Standard Time","America/St_Lucia":"SA Western Standard Time","Europe/Budapest":"Central Europe Standard Time","Etc/GMT+1":"Cape Verde Standard Time","Asia/Nicosia":"GTB Standard Time","Asia/Kuching":"Singapore Standard Time","America/Chihuahua":"Mountain Standard Time (Mexico)","Asia/Choibalsan":"Ulaanbaatar Standard Time","Europe/Zagreb":"Central European Standard Time","America/Martinique":"SA Western Standard Time","FLE Standard Time":[["Europe/Kiev","Europe/Mariehamn","Europe/Sofia","Europe/Tallinn","Europe/Helsinki","Europe/Vilnius","Europe/Riga","Europe/Uzhgorod","Europe/Zaporozhye"],"(UTC+02:00) Helsinki, Kyiv, Riga, Sofia, Tallinn, Vilnius","FLE Standard Time","FLE Daylight Time",true,120],"America/Swift_Current":"Canada Central Standard Time","America/Hermosillo":"US Mountain Standard Time","Etc/GMT-9":"Tokyo Standard Time","America/Santarem":"SA Eastern Standard Time","Pacific/Fakaofo":"Tonga Standard Time","Greenwich Standard Time":[["Atlantic/Reykjavik","Africa/Ouagadougou","Africa/Abidjan","Africa/Accra","Africa/Banjul","Africa/Conakry","Africa/Bissau","Africa/Monrovia","Africa/Bamako","Africa/Nouakchott","Atlantic/St_Helena","Africa/Freetown","Africa/Dakar","Africa/Sao_Tome","Africa/Lome"],"(UTC+00:00) Monrovia, Reykjavik","Greenwich Standard Time","Greenwich Daylight Time",false,0],"W. Australia Standard Time":[["Australia/Perth"],"(UTC+08:00) Perth","W. Australia Standard Time","W. Australia Daylight Time",true,480],"Pacific/Wake":"UTC+12","America/Merida":"Central Standard Time (Mexico)","America/Scoresbysund":"Azores Standard Time","Asia/Barnaul":"Altai Standard Time","Asia/Seoul":"Korea Standard Time","America/Inuvik":"Mountain Standard Time","America/Rainy_River":"Central Standard Time","Pacific/Tahiti":"Hawaiian Standard Time","America/Iqaluit":"Eastern Standard Time","Europe/Moscow":"Russian Standard Time","Korea Standard Time":[["Asia/Seoul"],"(UTC+09:00) Seoul","Korea Standard Time","Korea Daylight Time",false,540],"Paraguay Standard Time":[["America/Asuncion"],"(UTC-04:00) Asuncion","Paraguay Standard Time","Paraguay Daylight Time",true,-240],"Asia/Riyadh":"Arab Standard Time","Central European Standard Time":[["Europe/Warsaw","Europe/Sarajevo","Europe/Zagreb","Europe/Skopje"],"(UTC+01:00) Sarajevo, Skopje, Warsaw, Zagreb","Central European Standard Time","Central European Daylight Time",true,60],"Europe/Samara":"Russia Time Zone 3","Central Standard Time (Mexico)":[["America/Mexico_City","America/Bahia_Banderas","America/Merida","America/Monterrey"],"(UTC-06:00) Guadalajara, Mexico City, Monterrey","Central Standard Time (Mexico)","Central Daylight Time (Mexico)",true,-360],"America/Indiana/Winamac":"Eastern Standard Time","North Asia East Standard Time":[["Asia/Irkutsk"],"(UTC+08:00) Irkutsk","Russia TZ 7 Standard Time","Russia TZ 7 Daylight Time",true,480],"Asia/Yekaterinburg":"Ekaterinburg Standard Time","Africa/Addis_Ababa":"E. Africa Standard Time","Haiti Standard Time":[["America/Port-au-Prince"],"(UTC-05:00) Haiti","Haiti Standard Time","Haiti Daylight Time",true,-300],"Asia/Jayapura":"Tokyo Standard Time","Etc/GMT-1":"W. Central Africa Standard Time","Europe/Skopje":"Central European Standard Time","America/Dominica":"SA Western Standard Time","Turks And Caicos Standard Time":[["America/Grand_Turk"],"(UTC-04:00) Turks and Caicos","Turks and Caicos Standard Time","Turks and Caicos Daylight Time",true,-240],"Pacific/Kwajalein":"UTC+12","Etc/GMT":"UTC","AUS Eastern Standard Time":[["Australia/Sydney","Australia/Melbourne"],"(UTC+10:00) Canberra, Melbourne, Sydney","AUS Eastern Standard Time","AUS Eastern Daylight Time",true,600],"Antarctica/Vostok":"Central Asia Standard Time","E. Europe Standard Time":[["Europe/Chisinau"],"(UTC+02:00) Chisinau","E. Europe Standard Time","E. Europe Daylight Time",true,120],"Pacific/Majuro":"UTC+12","CST6CDT":"Central Standard Time","Indian/Mahe":"Mauritius Standard Time","America/Yellowknife":"Mountain Standard Time","Etc/GMT+5":"SA Pacific Standard Time","Marquesas Standard Time":[["Pacific/Marquesas"],"(UTC-09:30) Marquesas Islands","Marquesas Standard Time","Marquesas Daylight Time",false,-570],"Atlantic/Madeira":"GMT Standard Time","Pacific/Tongatapu":"Tonga Standard Time","Europe/Andorra":"W. Europe Standard Time","America/Boa_Vista":"SA Western Standard Time","Europe/Vienna":"W. Europe Standard Time","Asia/Muscat":"Arabian Standard Time","America/Winnipeg":"Central Standard Time","America/Nassau":"Eastern Standard Time","Asia/Aqtobe":"West Asia Standard Time","Antarctica/McMurdo":"New Zealand Standard Time","Eastern Standard Time":[["America/New_York","America/Nassau","America/Toronto","America/Iqaluit","America/Montreal","America/Nipigon","America/Pangnirtung","America/Thunder_Bay","America/Detroit","America/Indiana/Petersburg","America/Indiana/Vincennes","America/Indiana/Winamac","America/Kentucky/Monticello","America/Louisville","EST5EDT"],"(UTC-05:00) Eastern Time (US \u0026amp; Canada)","Eastern Standard Time","Eastern Daylight Time",true,-300],"America/Anguilla":"SA Western Standard Time","Africa/Ouagadougou":"Greenwich Standard Time","Etc/GMT-4":"Arabian Standard Time","Atlantic/Azores":"Azores Standard Time","Europe/Mariehamn":"FLE Standard Time","Pacific/Saipan":"West Pacific Standard Time","Etc/UTC":"UTC","Australia/Currie":"Tasmania Standard Time","America/Louisville":"Eastern Standard Time","E. Africa Standard Time":[["Africa/Nairobi","Antarctica/Syowa","Africa/Djibouti","Africa/Asmera","Africa/Addis_Ababa","Indian/Comoro","Indian/Antananarivo","Africa/Khartoum","Africa/Mogadishu","Africa/Juba","Africa/Dar_es_Salaam","Africa/Kampala","Indian/Mayotte","Etc/GMT-3"],"(UTC+03:00) Nairobi","E. Africa Standard Time","E. Africa Daylight Time",false,180],"E. South America Standard Time":[["America/Sao_Paulo"],"(UTC-03:00) Brasilia","E. South America Standard Time","E. South America Daylight Time",true,-180],"Europe/Uzhgorod":"FLE Standard Time","America/El_Salvador":"Central America Standard Time","Pacific/Johnston":"Hawaiian Standard Time","Syria Standard Time":[["Asia/Damascus"],"(UTC+02:00) Damascus","Syria Standard Time","Syria Daylight Time",true,120],"America/Toronto":"Eastern Standard Time","Asia/Bishkek":"Central Asia Standard Time","Atlantic/Canary":"GMT Standard Time","America/Dawson":"Pacific Standard Time","Bougainville Standard Time":[["Pacific/Bougainville"],"(UTC+11:00) Bougainville Island","Bougainville Standard Time","Bougainville Daylight Time",true,660],"Alaskan Standard Time":[["America/Anchorage","America/Juneau","America/Metlakatla","America/Nome","America/Sitka","America/Yakutat"],"(UTC-09:00) Alaska","Alaskan Standard Time","Alaskan Daylight Time",true,-540],"America/Curacao":"SA Western Standard Time","America/Eirunepe":"SA Pacific Standard Time","Asia/Ust-Nera":"Vladivostok Standard Time","SA Pacific Standard Time":[["America/Bogota","America/Rio_Branco","America/Eirunepe","America/Coral_Harbour","America/Guayaquil","America/Jamaica","America/Cayman","America/Panama","America/Lima","Etc/GMT+5"],"(UTC-05:00) Bogota, Lima, Quito, Rio Branco","SA Pacific Standard Time","SA Pacific Daylight Time",false,-300],"Africa/Lome":"Greenwich Standard Time","Pacific/Pago_Pago":"UTC-11","America/Cambridge_Bay":"Mountain Standard Time","America/Indianapolis":"US Eastern Standard Time","America/Indiana/Vevay":"US Eastern Standard Time","Antarctica/Davis":"SE Asia Standard Time","Asia/Srednekolymsk":"Russia Time Zone 10","America/Bogota":"SA Pacific Standard Time","Europe/Saratov":"Astrakhan Standard Time","UTC+13":[null,"(UTC+13:00) Coordinated Universal Time+13","UTC+13","UTC+13",false,780],"Europe/Vatican":"W. Europe Standard Time","Belarus Standard Time":[["Europe/Minsk"],"(UTC+03:00) Minsk","Belarus Standard Time","Belarus Daylight Time",true,180],"Europe/Riga":"FLE Standard Time","Arctic/Longyearbyen":"W. Europe Standard Time","Asia/Tashkent":"West Asia Standard Time","America/Guadeloupe":"SA Western Standard Time","Africa/Conakry":"Greenwich Standard Time","America/Port-au-Prince":"Haiti Standard Time","America/Belize":"Central America Standard Time","South Africa Standard Time":[["Africa/Johannesburg","Africa/Bujumbura","Africa/Gaborone","Africa/Lubumbashi","Africa/Maseru","Africa/Blantyre","Africa/Maputo","Africa/Kigali","Africa/Mbabane","Africa/Lusaka","Africa/Harare","Etc/GMT-2"],"(UTC+02:00) Harare, Pretoria","South Africa Standard Time","South Africa Daylight Time",false,120],"Europe/Warsaw":"Central European Standard Time","Africa/Dakar":"Greenwich Standard Time","UTC-08":[["Etc/GMT+8","Pacific/Pitcairn"],"(UTC-08:00) Coordinated Universal Time-08","UTC-08","UTC-08",false,-480],"America/Vancouver":"Pacific Standard Time","Europe/Ulyanovsk":"Astrakhan Standard Time","Europe/Amsterdam":"W. Europe Standard Time","Cuba Standard Time":[["America/Havana"],"(UTC-05:00) Havana","Cuba Standard Time","Cuba Daylight Time",true,-300],"Asia/Baku":"Azerbaijan Standard Time","Asia/Ulaanbaatar":"Ulaanbaatar Standard Time","America/Argentina/Rio_Gallegos":"Argentina Standard Time","North Korea Standard Time":[["Asia/Pyongyang"],"(UTC+08:30) Pyongyang","North Korea Standard Time","North Korea Daylight Time",true,510],"Indian/Maldives":"West Asia Standard Time","SA Western Standard Time":[["America/La_Paz","America/Antigua","America/Anguilla","America/Aruba","America/Barbados","America/St_Barthelemy","America/Kralendijk","America/Manaus","America/Boa_Vista","America/Porto_Velho","America/Blanc-Sablon","America/Curacao","America/Dominica","America/Santo_Domingo","America/Grenada","America/Guadeloupe","America/Guyana","America/St_Kitts","America/St_Lucia","America/Marigot","America/Martinique","America/Montserrat","America/Puerto_Rico","America/Lower_Princes","America/Port_of_Spain","America/St_Vincent","America/Tortola","America/St_Thomas","Etc/GMT+4"],"(UTC-04:00) Georgetown, La Paz, Manaus, San Juan","SA Western Standard Time","SA Western Daylight Time",false,-240],"Central Pacific Standard Time":[["Pacific/Guadalcanal","Antarctica/Casey","Antarctica/Macquarie","Pacific/Ponape","Pacific/Kosrae","Pacific/Noumea","Pacific/Efate","Etc/GMT-11"],"(UTC+11:00) Solomon Is., New Caledonia","Central Pacific Standard Time","Central Pacific Daylight Time",false,660],"America/Dawson_Creek":"US Mountain Standard Time","Africa/Dar_es_Salaam":"E. Africa Standard Time","America/Rankin_Inlet":"Central Standard Time","America/Antigua":"SA Western Standard Time","Asia/Thimphu":"Bangladesh Standard Time","Chatham Islands Standard Time":[["Pacific/Chatham"],"(UTC+12:45) Chatham Islands","Chatham Islands Standard Time","Chatham Islands Daylight Time",true,765],"America/North_Dakota/New_Salem":"Central Standard Time","America/Ojinaga":"Mountain Standard Time","Africa/Asmera":"E. Africa Standard Time","Europe/San_Marino":"W. Europe Standard Time","Pacific/Pitcairn":"UTC-08","Europe/Isle_of_Man":"GMT Standard Time","North Asia Standard Time":[["Asia/Krasnoyarsk","Asia/Novokuznetsk"],"(UTC+07:00) Krasnoyarsk","Russia TZ 6 Standard Time","Russia TZ 6 Daylight Time",true,420],"America/Danmarkshavn":"UTC","America/Mexico_City":"Central Standard Time (Mexico)","Africa/Banjul":"Greenwich Standard Time","Europe/Zurich":"W. Europe Standard Time","America/St_Johns":"Newfoundland Standard Time","Pacific/Apia":"Samoa Standard Time","Pacific/Niue":"UTC-11","Etc/GMT-3":"E. Africa Standard Time","America/Fortaleza":"SA Eastern Standard Time","China Standard Time":[["Asia/Shanghai","Asia/Hong_Kong","Asia/Macau"],"(UTC+08:00) Beijing, Chongqing, Hong Kong, Urumqi","China Standard Time","China Daylight Time",false,480],"America/Mazatlan":"Mountain Standard Time (Mexico)","Asia/Samarkand":"West Asia Standard Time","America/Adak":"Aleutian Standard Time","Russia Time Zone 3":[["Europe/Samara"],"(UTC+04:00) Izhevsk, Samara","Russia TZ 3 Standard Time","Russia TZ 3 Daylight Time",true,240],"Taipei Standard Time":[["Asia/Taipei"],"(UTC+08:00) Taipei","Taipei Standard Time","Taipei Daylight Time",false,480],"America/Montreal":"Eastern Standard Time","Russia Time Zone 11":[["Asia/Kamchatka","Asia/Anadyr"],"(UTC+12:00) Anadyr, Petropavlovsk-Kamchatsky","Russia TZ 11 Standard Time","Russia TZ 11 Daylight Time",true,720],"Arabian Standard Time":[["Asia/Dubai","Asia/Muscat","Etc/GMT-4"],"(UTC+04:00) Abu Dhabi, Muscat","Arabian Standard Time","Arabian Daylight Time",false,240],"Asia/Oral":"West Asia Standard Time","Asia/Brunei":"Singapore Standard Time","Bangladesh Standard Time":[["Asia/Dhaka","Asia/Thimphu"],"(UTC+06:00) Dhaka","Bangladesh Standard Time","Bangladesh Daylight Time",true,360],"America/Bahia_Banderas":"Central Standard Time (Mexico)","Africa/Khartoum":"E. Africa Standard Time","Asia/Hovd":"W. Mongolia Standard Time","Antarctica/Mawson":"West Asia Standard Time","Africa/Maseru":"South Africa Standard Time","Asia/Aqtau":"West Asia Standard Time","Europe/Chisinau":"E. Europe Standard Time","Africa/Douala":"W. Central Africa Standard Time","Asia/Hong_Kong":"China Standard Time","Africa/Ndjamena":"W. Central Africa Standard Time","Indian/Reunion":"Mauritius Standard Time","Asia/Krasnoyarsk":"North Asia Standard Time","America/Buenos_Aires":"Argentina Standard Time","America/Grand_Turk":"Turks And Caicos Standard Time","US Eastern Standard Time":[["America/Indianapolis","America/Indiana/Marengo","America/Indiana/Vevay"],"(UTC-05:00) Indiana (East)","US Eastern Standard Time","US Eastern Daylight Time",true,-300],"Etc/GMT-6":"Central Asia Standard Time","Europe/Monaco":"W. Europe Standard Time","W. Europe Standard Time":[["Europe/Berlin","Europe/Andorra","Europe/Vienna","Europe/Zurich","Europe/Busingen","Europe/Gibraltar","Europe/Rome","Europe/Vaduz","Europe/Luxembourg","Europe/Monaco","Europe/Malta","Europe/Amsterdam","Europe/Oslo","Europe/Stockholm","Arctic/Longyearbyen","Europe/San_Marino","Europe/Vatican"],"(UTC+01:00) Amsterdam, Berlin, Bern, Rome, Stockholm, Vienna","W. Europe Standard Time","W. Europe Daylight Time",true,60],"America/Montevideo":"Montevideo Standard Time","America/St_Thomas":"SA Western Standard Time","Africa/Monrovia":"Greenwich Standard Time","Etc/GMT-8":"Singapore Standard Time","Saint Pierre Standard Time":[["America/Miquelon"],"(UTC-03:00) Saint Pierre and Miquelon","Saint Pierre Standard Time","Saint Pierre Daylight Time",true,-180],"America/Coral_Harbour":"SA Pacific Standard Time","Africa/Djibouti":"E. Africa Standard Time","Asia/Kabul":"Afghanistan Standard Time","America/Port_of_Spain":"SA Western Standard Time","Atlantic/Reykjavik":"Greenwich Standard Time","Central Standard Time":[["America/Chicago","America/Winnipeg","America/Rainy_River","America/Rankin_Inlet","America/Resolute","America/Matamoros","America/Indiana/Knox","America/Indiana/Tell_City","America/Menominee","America/North_Dakota/Beulah","America/North_Dakota/Center","America/North_Dakota/New_Salem","CST6CDT"],"(UTC-06:00) Central Time (US \u0026amp; Canada)","Central Standard Time","Central Daylight Time",true,-360],"Australia/Melbourne":"AUS Eastern Standard Time","Africa/Freetown":"Greenwich Standard Time","Asia/Atyrau":"West Asia Standard Time","Africa/Lagos":"W. Central Africa Standard Time","Europe/Helsinki":"FLE Standard Time","Asia/Karachi":"Pakistan Standard Time","America/Regina":"Canada Central Standard Time","Tocantins Standard Time":[["America/Araguaina"],"(UTC-03:00) Araguaina","Tocantins Standard Time","Tocantins Daylight Time",true,-180],"Antarctica/Rothera":"SA Eastern Standard Time","Etc/GMT+3":"SA Eastern Standard Time","Dateline Standard Time":[["Etc/GMT+12"],"(UTC-12:00) International Date Line West","Dateline Standard Time","Dateline Daylight Time",false,-720],"Australia/Sydney":"AUS Eastern Standard Time","Etc/GMT+12":"Dateline Standard Time","PST8PDT":"Pacific Standard Time","Canada Central Standard Time":[["America/Regina","America/Swift_Current"],"(UTC-06:00) Saskatchewan","Canada Central Standard Time","Canada Central Daylight Time",false,-360],"Lord Howe Standard Time":[["Australia/Lord_Howe"],"(UTC+10:30) Lord Howe Island","Lord Howe Standard Time","Lord Howe Daylight Time",true,630],"Europe/Busingen":"W. Europe Standard Time","Turkey Standard Time":[["Europe/Istanbul","Asia/Famagusta"],"(UTC+03:00) Istanbul","Turkey Standard Time","Turkey Daylight Time",true,180],"Africa/Bamako":"Greenwich Standard Time","America/Grenada":"SA Western Standard Time","America/Kralendijk":"SA Western Standard Time","America/Indiana/Petersburg":"Eastern Standard Time","Etc/GMT+4":"SA Western Standard Time","GTB Standard Time":[["Europe/Bucharest","Asia/Nicosia","Europe/Athens"],"(UTC+02:00) Athens, Bucharest","GTB Standard Time","GTB Daylight Time",true,120],"Asia/Vientiane":"SE Asia Standard Time","Africa/Lusaka":"South Africa Standard Time","Europe/Oslo":"W. Europe Standard Time","Australia/Hobart":"Tasmania Standard Time","Central Asia Standard Time":[["Asia/Almaty","Antarctica/Vostok","Asia/Urumqi","Indian/Chagos","Asia/Bishkek","Asia/Qyzylorda","Etc/GMT-6"],"(UTC+06:00) Astana","Central Asia Standard Time","Central Asia Daylight Time",false,360],"Etc/GMT+7":"US Mountain Standard Time","Kaliningrad Standard Time":[["Europe/Kaliningrad"],"(UTC+02:00) Kaliningrad","Russia TZ 1 Standard Time","Russia TZ 1 Daylight Time",true,120],"Yakutsk Standard Time":[["Asia/Yakutsk","Asia/Khandyga"],"(UTC+09:00) Yakutsk","Russia TZ 8 Standard Time","Russia TZ 8 Daylight Time",true,540],"Caucasus Standard Time":[["Asia/Yerevan"],"(UTC+04:00) Yerevan","Caucasus Standard Time","Caucasus Daylight Time",true,240],"EST5EDT":"Eastern Standard Time","Egypt Standard Time":[["Africa/Cairo"],"(UTC+02:00) Cairo","Egypt Standard Time","Egypt Daylight Time",true,120],"Europe/Dublin":"GMT Standard Time","Pacific/Norfolk":"Norfolk Standard Time","Arabic Standard Time":[["Asia/Baghdad"],"(UTC+03:00) Baghdad","Arabic Standard Time","Arabic Daylight Time",true,180],"Antarctica/Casey":"Central Pacific Standard Time","America/Porto_Velho":"SA Western Standard Time","Pakistan Standard Time":[["Asia/Karachi"],"(UTC+05:00) Islamabad, Karachi","Pakistan Standard Time","Pakistan Daylight Time",true,300],"SE Asia Standard Time":[["Asia/Bangkok","Antarctica/Davis","Indian/Christmas","Asia/Jakarta","Asia/Pontianak","Asia/Phnom_Penh","Asia/Vientiane","Asia/Saigon","Etc/GMT-7"],"(UTC+07:00) Bangkok, Hanoi, Jakarta","SE Asia Standard Time","SE Asia Daylight Time",false,420],"Asia/Hebron":"West Bank Standard Time","Africa/Windhoek":"Namibia Standard Time","SA Eastern Standard Time":[["America/Cayenne","Antarctica/Rothera","Antarctica/Palmer","America/Fortaleza","America/Belem","America/Maceio","America/Recife","America/Santarem","America/Punta_Arenas","Atlantic/Stanley","America/Paramaribo","Etc/GMT+3"],"(UTC-03:00) Cayenne, Fortaleza","SA Eastern Standard Time","SA Eastern Daylight Time",false,-180],"Asia/Tokyo":"Tokyo Standard Time","Pacific/Honolulu":"Hawaiian Standard Time","Asia/Magadan":"Magadan Standard Time","Omsk Standard Time":[["Asia/Omsk"],"(UTC+06:00) Omsk","Omsk Standard Time","Omsk Daylight Time",true,360],"America/New_York":"Eastern Standard Time","Europe/Berlin":"W. Europe Standard Time","Easter Island Standard Time":[["Pacific/Easter"],"(UTC-06:00) Easter Island","Easter Island Standard Time","Easter Island Daylight Time",true,-360],"Central America Standard Time":[["America/Guatemala","America/Belize","America/Costa_Rica","Pacific/Galapagos","America/Tegucigalpa","America/Managua","America/El_Salvador","Etc/GMT+6"],"(UTC-06:00) Central America","Central America Standard Time","Central America Daylight Time",false,-360],"N. Central Asia Standard Time":[["Asia/Novosibirsk"],"(UTC+07:00) Novosibirsk","Novosibirsk Standard Time","Novosibirsk Daylight Time",true,420],"Asia/Rangoon":"Myanmar Standard Time","America/Argentina/La_Rioja":"Argentina Standard Time","Myanmar Standard Time":[["Asia/Rangoon","Indian/Cocos"],"(UTC+06:30) Yangon (Rangoon)","Myanmar Standard Time","Myanmar Daylight Time",false,390],"Etc/GMT-12":"UTC+12","Africa/Juba":"E. Africa Standard Time","Etc/GMT-11":"Central Pacific Standard Time","America/Yakutat":"Alaskan Standard Time","Pacific/Port_Moresby":"West Pacific Standard Time","Atlantic/South_Georgia":"UTC-02","Australia/Darwin":"AUS Central Standard Time","America/Nipigon":"Eastern Standard Time","America/Panama":"SA Pacific Standard Time","America/Cordoba":"Argentina Standard Time","Europe/Stockholm":"W. Europe Standard Time","America/Rio_Branco":"SA Pacific Standard Time","Europe/Prague":"Central Europe Standard Time","Antarctica/Palmer":"SA Eastern Standard Time","America/Whitehorse":"Pacific Standard Time","Pacific/Enderbury":"Tonga Standard Time","UTC+12":[["Etc/GMT-12","Pacific/Tarawa","Pacific/Majuro","Pacific/Kwajalein","Pacific/Nauru","Pacific/Funafuti","Pacific/Wake","Pacific/Wallis"],"(UTC+12:00) Coordinated Universal Time+12","UTC+12","UTC+12",false,720],"UTC-09":[["Etc/GMT+9","Pacific/Gambier"],"(UTC-09:00) Coordinated Universal Time-09","UTC-09","UTC-09",false,-540],"AUS Central Standard Time":[["Australia/Darwin"],"(UTC+09:30) Darwin","AUS Central Standard Time","AUS Central Daylight Time",false,570],"Line Islands Standard Time":[["Pacific/Kiritimati","Etc/GMT-14"],"(UTC+14:00) Kiritimati Island","Line Islands Standard Time","Line Islands Daylight Time",false,840],"Africa/Mbabane":"South Africa Standard Time","Asia/Dushanbe":"West Asia Standard Time","America/Indiana/Marengo":"US Eastern Standard Time","America/Punta_Arenas":"SA Eastern Standard Time","America/Maceio":"SA Eastern Standard Time","America/Menominee":"Central Standard Time","America/Anchorage":"Alaskan Standard Time","Norfolk Standard Time":[["Pacific/Norfolk"],"(UTC+11:00) Norfolk Island","Norfolk Standard Time","Norfolk Daylight Time",true,660],"America/Monterrey":"Central Standard Time (Mexico)","America/Paramaribo":"SA Eastern Standard Time","Africa/Gaborone":"South Africa Standard Time","Morocco Standard Time":[["Africa/Casablanca","Africa/El_Aaiun"],"(UTC+00:00) Casablanca","Morocco Standard Time","Morocco Daylight Time",true,0],"Australia/Brisbane":"E. Australia Standard Time","West Bank Standard Time":[["Asia/Hebron","Asia/Gaza"],"(UTC+02:00) Gaza, Hebron","West Bank Gaza Standard Time","West Bank Gaza Daylight Time",true,120],"America/St_Barthelemy":"SA Western Standard Time","America/Montserrat":"SA Western Standard Time","America/St_Vincent":"SA Western Standard Time","America/Goose_Bay":"Atlantic Standard Time","America/Argentina/Salta":"Argentina Standard Time","Europe/Malta":"W. Europe Standard Time","Australia/Perth":"W. Australia Standard Time","Azerbaijan Standard Time":[["Asia/Baku"],"(UTC+04:00) Baku","Azerbaijan Standard Time","Azerbaijan Daylight Time",true,240],"Asia/Katmandu":"Nepal Standard Time","Pacific/Bougainville":"Bougainville Standard Time","Asia/Phnom_Penh":"SE Asia Standard Time","Africa/Porto-Novo":"W. Central Africa Standard Time","America/Tortola":"SA Western Standard Time","Tomsk Standard Time":[["Asia/Tomsk"],"(UTC+07:00) Tomsk","Tomsk Standard Time","Tomsk Daylight Time",true,420],"Romance Standard Time":[["Europe/Paris","Europe/Brussels","Europe/Copenhagen","Europe/Madrid","Africa/Ceuta"],"(UTC+01:00) Brussels, Copenhagen, Madrid, Paris","Romance Standard Time","Romance Daylight Time",true,60],"America/Matamoros":"Central Standard Time","America/Bahia":"Bahia Standard Time","Indian/Chagos":"Central Asia Standard Time","America/Godthab":"Greenland Standard Time","Africa/Luanda":"W. Central Africa Standard Time","America/Resolute":"Central Standard Time","Asia/Omsk":"Omsk Standard Time","Indian/Christmas":"SE Asia Standard Time","Africa/El_Aaiun":"Morocco Standard Time","America/Metlakatla":"Alaskan Standard Time","Europe/Athens":"GTB Standard Time","Asia/Kuala_Lumpur":"Singapore Standard Time","Europe/Zaporozhye":"FLE Standard Time","Asia/Khandyga":"Yakutsk Standard Time","Arab Standard Time":[["Asia/Riyadh","Asia/Bahrain","Asia/Kuwait","Asia/Qatar","Asia/Aden"],"(UTC+03:00) Kuwait, Riyadh","Arab Standard Time","Arab Daylight Time",false,180],"America/Moncton":"Atlantic Standard Time","Europe/Bratislava":"Central Europe Standard Time","Etc/GMT-2":"South Africa Standard Time","Antarctica/Syowa":"E. Africa Standard Time","Etc/GMT+11":"UTC-11","America/Argentina/San_Juan":"Argentina Standard Time","Asia/Ashgabat":"West Asia Standard Time","Indian/Comoro":"E. Africa Standard Time","Asia/Shanghai":"China Standard Time","Asia/Yakutsk":"Yakutsk Standard Time","Aus Central W. Standard Time":[["Australia/Eucla"],"(UTC+08:45) Eucla","Aus Central W. Standard Time","Aus Central W. Daylight Time",false,525],"America/Managua":"Central America Standard Time","Africa/Nouakchott":"Greenwich Standard Time","America/North_Dakota/Center":"Central Standard Time","Africa/Algiers":"W. Central Africa Standard Time","Europe/Rome":"W. Europe Standard Time","Pacific/Wallis":"UTC+12","Europe/Tallinn":"FLE Standard Time","Australia/Broken_Hill":"Cen. Australia Standard Time","Etc/GMT-14":"Line Islands Standard Time","Africa/Casablanca":"Morocco Standard Time","Pacific Standard Time":[["America/Los_Angeles","America/Vancouver","America/Dawson","America/Whitehorse","PST8PDT"],"(UTC-08:00) Pacific Time (US \u0026amp; Canada)","Pacific Standard Time","Pacific Daylight Time",true,-480],"Pacific/Galapagos":"Central America Standard Time","Africa/Bissau":"Greenwich Standard Time","Pacific/Fiji":"Fiji Standard Time","Asia/Kuwait":"Arab Standard Time","America/Cuiaba":"Central Brazilian Standard Time","Pacific/Funafuti":"UTC+12","Etc/GMT-7":"SE Asia Standard Time","Africa/Kampala":"E. Africa Standard Time","Europe/Istanbul":"Turkey Standard Time","America/Thunder_Bay":"Eastern Standard Time","America/Creston":"US Mountain Standard Time","Pacific/Easter":"Easter Island Standard Time","Middle East Standard Time":[["Asia/Beirut"],"(UTC+02:00) Beirut","Middle East Standard Time","Middle East Daylight Time",true,120],"America/Detroit":"Eastern Standard Time","America/Cancun":"Eastern Standard Time (Mexico)","Asia/Macau":"China Standard Time","Eastern Standard Time (Mexico)":[["America/Cancun"],"(UTC-05:00) Chetumal","Eastern Standard Time (Mexico)","Eastern Daylight Time (Mexico)",true,-300],"America/Indiana/Vincennes":"Eastern Standard Time","Asia/Bahrain":"Arab Standard Time","Argentina Standard Time":[["America/Buenos_Aires","America/Argentina/La_Rioja","America/Argentina/Rio_Gallegos","America/Argentina/Salta","America/Argentina/San_Juan","America/Argentina/San_Luis","America/Argentina/Tucuman","America/Argentina/Ushuaia","America/Catamarca","America/Cordoba","America/Jujuy","America/Mendoza"],"(UTC-03:00) City of Buenos Aires","Argentina Standard Time","Argentina Daylight Time",true,-180],"Asia/Irkutsk":"North Asia East Standard Time","Asia/Novosibirsk":"N. Central Asia Standard Time","America/Noronha":"UTC-02","Africa/Maputo":"South Africa Standard Time","America/Sao_Paulo":"E. South America Standard Time","Europe/Podgorica":"Central Europe Standard Time","Etc/GMT+2":"UTC-02","Pacific/Marquesas":"Marquesas Standard Time","America/Blanc-Sablon":"SA Western Standard Time","Asia/Yerevan":"Caucasus Standard Time","Atlantic/Cape_Verde":"Cape Verde Standard Time","Pacific/Auckland":"New Zealand Standard Time","America/Phoenix":"US Mountain Standard Time","Pacific/Truk":"West Pacific Standard Time","Greenland Standard Time":[["America/Godthab"],"(UTC-03:00) Greenland","Greenland Standard Time","Greenland Daylight Time",true,-180],"Africa/Mogadishu":"E. Africa Standard Time","Pacific SA Standard Time":[["America/Santiago"],"(UTC-04:00) Santiago","Pacific SA Standard Time","Pacific SA Daylight Time",true,-240],"Asia/Urumqi":"Central Asia Standard Time","Asia/Chita":"Transbaikal Standard Time","America/Lima":"SA Pacific Standard Time","Australia/Eucla":"Aus Central W. Standard Time","Asia/Damascus":"Syria Standard Time","Europe/Minsk":"Belarus Standard Time","Africa/Bujumbura":"South Africa Standard Time","Asia/Makassar":"Singapore Standard Time","Saratov Standard Time":[null,"(UTC+04:00) Saratov","Saratov Standard Time","Saratov Daylight Time",true,240],"Ulaanbaatar Standard Time":[["Asia/Ulaanbaatar","Asia/Choibalsan"],"(UTC+08:00) Ulaanbaatar","Ulaanbaatar Standard Time","Ulaanbaatar Daylight Time",true,480],"Asia/Amman":"Jordan Standard Time","Tonga Standard Time":[["Pacific/Tongatapu","Pacific/Enderbury","Pacific/Fakaofo","Etc/GMT-13"],"(UTC+13:00) Nuku\u0027alofa","Tonga Standard Time","Tonga Daylight Time",true,780],"Atlantic/St_Helena":"Greenwich Standard Time","America/Santiago":"Pacific SA Standard Time","UTC-02":[["Etc/GMT+2","America/Noronha","Atlantic/South_Georgia"],"(UTC-02:00) Coordinated Universal Time-02","UTC-02","UTC-02",false,-120],"Europe/Luxembourg":"W. Europe Standard Time","Africa/Cairo":"Egypt Standard Time","America/Recife":"SA Eastern Standard Time","America/Indiana/Tell_City":"Central Standard Time","Africa/Niamey":"W. Central Africa Standard Time","America/Juneau":"Alaskan Standard Time","Asia/Qyzylorda":"Central Asia Standard Time","Asia/Bangkok":"SE Asia Standard Time","Magadan Standard Time":[["Asia/Magadan"],"(UTC+11:00) Magadan","Magadan Standard Time","Magadan Daylight Time",true,660],"Africa/Johannesburg":"South Africa Standard Time","America/Santa_Isabel":"Pacific Standard Time (Mexico)","Astrakhan Standard Time":[["Europe/Astrakhan","Europe/Saratov","Europe/Ulyanovsk"],"(UTC+04:00) Astrakhan, Ulyanovsk","Astrakhan Standard Time","Astrakhan Daylight Time",true,240],"America/Cayenne":"SA Eastern Standard Time","Africa/Tripoli":"Libya Standard Time","Africa/Bangui":"W. Central Africa Standard Time","Asia/Tomsk":"Tomsk Standard Time","Central Brazilian Standard Time":[["America/Cuiaba","America/Campo_Grande"],"(UTC-04:00) Cuiaba","Central Brazilian Standard Time","Central Brazilian Daylight Time",true,-240],"Africa/Harare":"South Africa Standard Time","Europe/Kaliningrad":"Kaliningrad Standard Time","Israel Standard Time":[["Asia/Jerusalem"],"(UTC+02:00) Jerusalem","Jerusalem Standard Time","Jerusalem Daylight Time",true,120],"E. Australia Standard Time":[["Australia/Brisbane","Australia/Lindeman"],"(UTC+10:00) Brisbane","E. Australia Standard Time","E. Australia Daylight Time",false,600],"America/Marigot":"SA Western Standard Time","Asia/Dhaka":"Bangladesh Standard Time","Etc/GMT-10":"West Pacific Standard Time","Europe/Paris":"Romance Standard Time","America/Nome":"Alaskan Standard Time","America/Belem":"SA Eastern Standard Time","Africa/Sao_Tome":"Greenwich Standard Time","Asia/Taipei":"Taipei Standard Time","Pacific/Chatham":"Chatham Islands Standard Time","Asia/Vladivostok":"Vladivostok Standard Time","Vladivostok Standard Time":[["Asia/Vladivostok","Asia/Ust-Nera"],"(UTC+10:00) Vladivostok","Russia TZ 9 Standard Time","Russia TZ 9 Daylight Time",true,600],"America/Tijuana":"Pacific Standard Time (Mexico)","Etc/GMT-13":"Tonga Standard Time","Pacific/Guadalcanal":"Central Pacific Standard Time","Indian/Antananarivo":"E. Africa Standard Time","Africa/Ceuta":"Romance Standard Time","America/Jujuy":"Argentina Standard Time","Cape Verde Standard Time":[["Atlantic/Cape_Verde","Etc/GMT+1"],"(UTC-01:00) Cabo Verde Is.","Cabo Verde Standard Time","Cabo Verde Daylight Time",false,-60],"GMT Standard Time":[["Europe/London","Atlantic/Canary","Atlantic/Faeroe","Europe/Guernsey","Europe/Dublin","Europe/Isle_of_Man","Europe/Jersey","Europe/Lisbon","Atlantic/Madeira"],"(UTC+00:00) Dublin, Edinburgh, Lisbon, London","GMT Standard Time","GMT Daylight Time",true,0],"Bahia Standard Time":[["America/Bahia"],"(UTC-03:00) Salvador","Bahia Standard Time","Bahia Daylight Time",true,-180]}
 export let CustomTimeZoneMappingData = {
     'tzone://Microsoft/Utc':'UTC'
 }
@@ -4989,8 +2887,8 @@ export class TimeZoneInfo {
         let tzGuess: string = moment.tz.guess();
         let offset: number = moment().utcOffset();
         if (StringHelper.IsNullOrEmpty(tzGuess) || StringHelper.IsNullOrEmpty(TimeZoneMappingData[tzGuess])) {
-            console.assert(false, "Unabele to guess timezone, switching to Utc");
-            return this.Utc;
+            console.log("Unable to guess timezone, switching to Utc");
+            tzGuess = "Etc/UTC";
         }
         let tzArray: any[] = TimeZoneMappingData[TimeZoneMappingData[tzGuess]];
 
@@ -5153,9 +3051,9 @@ export module TimeZoneInfo {
 
         /** @internal */
         get HasDaylightSaving(): boolean {
-            return ((this.DaylightDelta != TimeSpan.Zero)
-                || ((this.DaylightTransitionStart.TimeOfDay != DateTime.MinValue)
-                    || (this.DaylightTransitionEnd.TimeOfDay != DateTime.MinValue.AddMilliseconds(1))));
+            return ((this.DaylightDelta.TotalMilliseconds != TimeSpan.Zero.TotalMilliseconds)
+                || ((this.DaylightTransitionStart.TimeOfDay.TotalMilliSeconds != DateTime.MinValue.TotalMilliSeconds)
+                    || (this.DaylightTransitionEnd.TimeOfDay.TotalMilliSeconds != DateTime.MinValue.AddMilliseconds(1).TotalMilliSeconds)));
         }
 
         private constructor(
@@ -5300,11 +3198,11 @@ export module TimeZoneInfo {
                 throw new ArgumentException("Argument_TimeSpanHasSeconds", "daylightDelta");
             }
 
-            if (dateStart != DateTime.MinValue && dateStart.Kind == DateTimeKind.Unspecified && dateStart.TimeOfDay != TimeSpan.Zero) {
+            if (dateStart.TotalMilliSeconds != DateTime.MinValue.TotalMilliSeconds && dateStart.Kind == DateTimeKind.Unspecified && dateStart.TimeOfDay.TotalMilliseconds != TimeSpan.Zero.TotalMilliseconds) {
                 throw new ArgumentException("Argument_DateTimeHasTimeOfDay", "dateStart");
             }
 
-            if (dateEnd != DateTime.MaxValue && dateEnd.Kind == DateTimeKind.Unspecified && dateEnd.TimeOfDay != TimeSpan.Zero) {
+            if (dateEnd.TotalMilliSeconds != DateTime.MaxValue.TotalMilliSeconds && dateEnd.Kind == DateTimeKind.Unspecified && dateEnd.TimeOfDay.TotalMilliseconds != TimeSpan.Zero.TotalMilliseconds) {
                 throw new ArgumentException("Argument_DateTimeHasTimeOfDay", "dateEnd");
             }
         }
@@ -15831,8 +13729,8 @@ export class Suggestion extends ComplexProperty {
     LoadFromXmlJsObject(jsonProperty: any, service: ExchangeService): void {
 
         this.date = DateTime.Parse(jsonProperty[XmlElementNames.Date]);
-        console.log("bug: Suggestion->LoadFromXml:    need to change to millisecond and with datetimekind")
-        debugger;
+        EwsLogging.Log("bug: Suggestion->LoadFromXml:    need to change to millisecond and with datetimekind", true)
+        //debugger;
         this.quality = <SuggestionQuality><any>SuggestionQuality[jsonProperty[XmlElementNames.DayQuality]];
 
         var suggestionArrayObj: any = jsonProperty[XmlElementNames.SuggestionArray];
@@ -16914,7 +14812,7 @@ export class WeeklyPattern extends IntervalPattern {
 
         this.DaysOfTheWeek.WriteToXml(writer, XmlElementNames.DaysOfWeek);
 
-        if (this.firstDayOfWeek) {
+        if (hasValue(this.firstDayOfWeek)) {
             //  We only allow the "FirstDayOfWeek" parameter for the Exchange2010_SP1 schema
             //  version.
             //
@@ -18025,7 +15923,7 @@ export class TimeZoneDefinition extends ComplexProperty {
         for (let transition of this.transitions) {
             //Type transitionType = transition.GetType();
 
-            if (!(transition instanceof TimeZoneTransition) && !(transition instanceof AbsoluteDateTransition)) {
+            if (!(transition instanceof TimeZoneTransition) && !(<any>transition instanceof AbsoluteDateTransition)) {
                 throw new ServiceLocalException(Strings.InvalidOrUnsupportedTimeZoneDefinition);
             }
 
@@ -18098,9 +15996,10 @@ export class TimeZoneDefinition extends ComplexProperty {
      * @internal Writes to XML.
      *
      * @param   {EwsServiceXmlWriter}   writer   The writer.
+     * @param   {string}                xmlElementName   Name of the XML element.
      */
-    WriteToXml(writer: EwsServiceXmlWriter): void {
-        super.WriteToXml(writer, XmlElementNames.TimeZoneDefinition);
+    WriteToXml(writer: EwsServiceXmlWriter, xmlElementName?: string): void {
+        super.WriteToXml(writer, xmlElementName || XmlElementNames.TimeZoneDefinition);
     }
 }
 
@@ -18408,6 +16307,12 @@ export class TimeZoneTransition extends ComplexProperty {
     WriteToXml(writer: EwsServiceXmlWriter): void {
         super.WriteToXml(writer, this.GetXmlElementName());
     }
+}
+
+export module TimeZoneTransition {
+    export var AbsoluteDateTransition;
+    export var AbsoluteDayOfMonthTransition;
+    export var RelativeDayOfMonthTransition;
 }
 
 /**
@@ -18722,7 +16627,7 @@ export class RelativeDayOfMonthTransition extends AbsoluteMonthTransition {
      */
 	CreateTransitionTime(): TimeZoneInfo.TransitionTime {
 		return TimeZoneInfo.TransitionTime.CreateFloatingDateRule(
-			new DateTime(this.TimeOffset.Milliseconds),
+			new DateTime(this.TimeOffset.Milliseconds - msToEpoch),
 			this.Month,
 			this.WeekIndex == -1 ? 5 : this.WeekIndex,
 			EwsUtilities.EwsToSystemDayOfWeek(this.DayOfTheWeek));
@@ -20611,8 +18516,6 @@ export class ExtendedProperty extends ComplexProperty {
     Equals(obj: any): boolean { throw new Error("ExtendedProperty.ts - Equals : Not implemented."); }
     GetHashCode(): number { throw new Error("ExtendedProperty.ts - GetHashCode : Not implemented."); }
     GetStringValue(): string { throw new Error("ExtendedProperty.ts - GetStringValue : Not implemented."); }
-    //InternalToJson(service: ExchangeService): any { throw new Error("ExtendedProperty.ts - InternalToJson : Not implemented."); }
-    LoadFromJson(jsonProperty: any, service: ExchangeService): any { throw new Error("ExtendedProperty.ts - LoadFromJson : Not implemented."); }
     LoadFromXmlJsObject(jsonProperty: any, service: ExchangeService): void {
         if (jsonProperty[XmlElementNames.ExtendedFieldURI]) {
             this.propertyDefinition = new ExtendedPropertyDefinition();
@@ -21398,32 +19301,281 @@ export class FolderPermission extends ComplexProperty {
     }
 }
 
-export class GroupMember extends ComplexProperty {
-    Key: string;
-    AddressInformation: EmailAddress;
-    Status: MemberStatus;
-    private addressInformation: EmailAddress;
+
+/**
+ * Represents a group member 
+ * [RequiredServerVersion(ExchangeVersion.Exchange2010)] ** needs implementation
+ */
+export class GroupMember extends ComplexProperty { // todo: need implementation for [RequiredServerVersion(ExchangeVersion.Exchange2010)]
+
+    /**
+     * AddressInformation field.
+     */
+    private addressInformation: EmailAddress = null;
+
+    /**
+     * Status field.
+     */
     private status: MemberStatus;
+
+    /**
+     * Member key field.
+     */
     private key: string;
-    AddressInformationChanged(complexProperty: ComplexProperty): any { throw new Error("GroupMember.ts - AddressInformationChanged : Not implemented."); }
-    InternalToJson(service: ExchangeService): any { throw new Error("GroupMember.ts - InternalToJson : Not implemented."); }
-    LoadFromJson(jsonProperty: JsonObject, service: ExchangeService): any { throw new Error("GroupMember.ts - LoadFromJson : Not implemented."); }
-    /**@internal */
-    ReadAttributesFromXmlJsObject(reader: EwsServiceXmlReader): any { throw new Error("GroupMember.ts - ReadAttributesFromXml : Not implemented."); }
-    /**@internal */
-    ReadElementsFromXmlJsObject(reader: EwsServiceXmlReader): boolean { throw new Error("GroupMember.ts - TryReadElementFromXmlJsObject : Not implemented."); }
-    /**@internal */
-    WriteAttributesToXml(writer: EwsServiceXmlWriter): any { throw new Error("GroupMember.ts - WriteAttributesToXml : Not implemented."); }
-    /**@internal */
-    WriteElementsToXml(writer: EwsServiceXmlWriter): any { throw new Error("GroupMember.ts - WriteElementsToXml : Not implemented."); }
+
+
+    /**
+     * ets the key of the member.
+     */
+    get Key(): string {
+        return this.key;
+    }
+
+    /**
+     * Gets the address information of the member.
+     */
+    get AddressInformation(): EmailAddress {
+        return this.addressInformation;
+    }
+
+    /**
+     * @internal Sets the address information of the member.
+     */
+    set AddressInformation(value: EmailAddress) {
+        if (this.addressInformation !== null) {
+            ArrayHelper.RemoveEntry(this.addressInformation.OnChange, this.AddressInformationChanged);
+        }
+        this.addressInformation = value;
+        if (this.addressInformation !== null) {
+            this.addressInformation.OnChange.push(this.AddressInformationChanged.bind(this));
+        }
+    }
+
+    /**
+     * Gets the status of the member.
+     */
+    get Status(): MemberStatus {
+        return this.status;
+    }
+
+
+    /**
+     * Initializes a new instance of the **GroupMember** class.
+     *
+     */
+    constructor();
+    /**
+     * Initializes a new instance of the **GroupMember** class.
+     *
+     * @param   {string}   smtpAddress   The SMTP address of the member.
+     */
+    constructor(smtpAddress: string);
+    /**
+     * Initializes a new instance of the **GroupMember** class.
+     *
+     * @param   {ItemId}   contactGroupId   The Id of the contact group to link the member to.
+     */
+    constructor(contactGroupId: ItemId);
+    /**
+     * Initializes a new instance of the **GroupMember** class.
+     *
+     * @param   {EmailAddress}   addressInformation   The e-mail address of the member.
+     */
+    constructor(addressInformation: EmailAddress);
+    /**
+     * @internal Initializes a new instance of the **GroupMember** class from another GroupMember instance.
+     *
+     * @param   {GroupMember}   member   GroupMember class instance to copy.
+     */
+    constructor(member: GroupMember);
+    /**
+     * Initializes a new instance of the **GroupMember** class.
+     *
+     * @param   {string}   smtpAddress   The SMTP address of the member.
+     * @param   {MailboxType}   mailboxType   The mailbox type of the member.
+     */
+    constructor(smtpAddress: string, mailboxType: MailboxType);
+    /**
+     * Initializes a new instance of the **GroupMember** class.
+     *
+     * @param   {string}   name          The name of the one-off member.
+     * @param   {string}   smtpAddress   The SMTP address of the one-off member.
+     */
+    constructor(name: string, smtpAddress: string);
+    /**
+     * Initializes a new instance of the **GroupMember** class.
+     *
+     * @param   {ItemId}   contactId       The Id of the contact member.
+     * @param   {string}   addressToLink   The Id of the contact to link the member to.
+     */
+    constructor(contactId: ItemId, addressToLink: string);
+    /**
+     * Initializes a new instance of the **GroupMember** class from a Contact instance indexed by the specified key.
+     *
+     * @param   {Contact}           contact           The contact to link to.
+     * @param   {EmailAddressKey}   emailAddressKey   The contact's e-mail address to link to.
+     */
+    constructor(contact: Contact, emailAddressKey: EmailAddressKey);
+    /**
+     * Initializes a new instance of the **GroupMember** class.
+     *
+     * @param   {string}   address       The address of the member.
+     * @param   {string}   routingType   The routing type of the address.
+     * @param   {MailboxType}   mailboxType   The mailbox type of the member.
+     */
+    constructor(address: string, routingType: string, mailboxType: MailboxType);
+    /**
+     * Initializes a new instance of the **GroupMember** class.
+     *
+     * @param   {string}   name          The name of the one-off member.
+     * @param   {string}   address       The address of the one-off member.
+     * @param   {string}   routingType   The routing type of the address.
+     */
+    constructor(name: string, address: string, routingType: string);
+    constructor(_1smtpOrCGIdOrAddrInfoOrMemberOrAddrOrNameOrContactOrCId?: string | ItemId | EmailAddress | GroupMember | Contact,
+        _2routingTypeOrMbxTypeOrAddressOrSmtpOrAddr2LinkOrEmailKey?: string | MailboxType | EmailAddressKey, _3mbxTypeOrRoutingType?: MailboxType | string) {
+        super();
+        // Key is assigned by server
+        this.key = null;
+
+        // Member status is calculated by server
+        this.status = MemberStatus.Unrecognized;
+
+        let argsLength = arguments.length;
+        if (argsLength == 1) {
+            if (typeof _1smtpOrCGIdOrAddrInfoOrMemberOrAddrOrNameOrContactOrCId === 'string') { // smtpAddress
+                this.AddressInformation = new EmailAddress(_1smtpOrCGIdOrAddrInfoOrMemberOrAddrOrNameOrContactOrCId);
+            } else if (_1smtpOrCGIdOrAddrInfoOrMemberOrAddrOrNameOrContactOrCId instanceof ItemId) { // contactGroupId
+                this.AddressInformation = new EmailAddress(
+                    null,
+                    null,
+                    null,
+                    MailboxType.ContactGroup,
+                    _1smtpOrCGIdOrAddrInfoOrMemberOrAddrOrNameOrContactOrCId);
+            } else if (_1smtpOrCGIdOrAddrInfoOrMemberOrAddrOrNameOrContactOrCId instanceof GroupMember) { // contactGroupId
+                EwsUtilities.ValidateParam(_1smtpOrCGIdOrAddrInfoOrMemberOrAddrOrNameOrContactOrCId, "member");
+                this.AddressInformation = new EmailAddress(_1smtpOrCGIdOrAddrInfoOrMemberOrAddrOrNameOrContactOrCId.AddressInformation);
+            } else {
+                this.AddressInformation = new EmailAddress(<EmailAddress>_1smtpOrCGIdOrAddrInfoOrMemberOrAddrOrNameOrContactOrCId);
+            }
+        }
+
+        if (argsLength === 2) {
+            if (typeof _1smtpOrCGIdOrAddrInfoOrMemberOrAddrOrNameOrContactOrCId === 'string') {
+                if (typeof _2routingTypeOrMbxTypeOrAddressOrSmtpOrAddr2LinkOrEmailKey === 'string') {
+                    this.AddressInformation = new EmailAddress(<string>_1smtpOrCGIdOrAddrInfoOrMemberOrAddrOrNameOrContactOrCId, <string>_2routingTypeOrMbxTypeOrAddressOrSmtpOrAddr2LinkOrEmailKey, EmailAddress.SmtpRoutingType, MailboxType.OneOff);
+                }
+                else {
+                    this.constructor_str_str_mbType(<string>_1smtpOrCGIdOrAddrInfoOrMemberOrAddrOrNameOrContactOrCId,
+                        EmailAddress.SmtpRoutingType,
+                        <MailboxType>_2routingTypeOrMbxTypeOrAddressOrSmtpOrAddr2LinkOrEmailKey);
+                }
+            } else if (_1smtpOrCGIdOrAddrInfoOrMemberOrAddrOrNameOrContactOrCId instanceof ItemId) {
+                this.AddressInformation = new EmailAddress(
+                    null,
+                    <string>_2routingTypeOrMbxTypeOrAddressOrSmtpOrAddr2LinkOrEmailKey, // addressToLink
+                    null,
+                    MailboxType.Contact,
+                    _1smtpOrCGIdOrAddrInfoOrMemberOrAddrOrNameOrContactOrCId); //contactId
+            } else {
+
+                let contact: Contact = <Contact>_1smtpOrCGIdOrAddrInfoOrMemberOrAddrOrNameOrContactOrCId;
+                EwsUtilities.ValidateParam(contact, "contact");
+
+                let emailAddress: EmailAddress = contact.EmailAddresses[_2routingTypeOrMbxTypeOrAddressOrSmtpOrAddr2LinkOrEmailKey /* emailAddressKey */];
+
+                this.AddressInformation = new EmailAddress(emailAddress);
+
+                this.addressInformation.Id = contact.Id;
+            }
+        }
+
+        if (argsLength === 3) {
+            if (typeof _3mbxTypeOrRoutingType === 'string') { // mailboxType
+                this.AddressInformation = new EmailAddress(<string>_1smtpOrCGIdOrAddrInfoOrMemberOrAddrOrNameOrContactOrCId, <string>_2routingTypeOrMbxTypeOrAddressOrSmtpOrAddr2LinkOrEmailKey, _3mbxTypeOrRoutingType, MailboxType.OneOff);
+            } else {
+
+                this.constructor_str_str_mbType(<string>_1smtpOrCGIdOrAddrInfoOrMemberOrAddrOrNameOrContactOrCId, <string>_2routingTypeOrMbxTypeOrAddressOrSmtpOrAddr2LinkOrEmailKey, _3mbxTypeOrRoutingType);
+            }
+        }
+    }
+
+    //#region Constructor methods
+    private constructor_str_str_mbType(address: string, routingType: string, mailboxType: MailboxType) {
+        switch (mailboxType) {
+            case MailboxType.PublicGroup:
+            case MailboxType.PublicFolder:
+            case MailboxType.Mailbox:
+            case MailboxType.Contact:
+            case MailboxType.OneOff:
+                this.AddressInformation = new EmailAddress(null, address, routingType, mailboxType);
+                break;
+
+            default:
+                throw new ServiceLocalException(Strings.InvalidMailboxType);
+        }
+    }
+    //#endregion
+
+
+    /**
+     * AddressInformation instance is changed.
+     *
+     * @param   {}   complexProperty   Changed property.
+     */
+    private AddressInformationChanged(complexProperty: ComplexProperty): void {
+        this.Changed();
+    }
+
+    /**
+     * @internal Loads service object from XML.
+     *
+     * @param   {any}				jsObject	Json Object converted from XML.
+     * @param   {ExchangeService}	service	The service.    
+     */
+    LoadFromXmlJsObject(jsObject: any, service: ExchangeService): void {
+        for (let key in jsObject) {
+            switch (key) {
+                case XmlAttributeNames.Key:
+                    this.key = jsObject[key];
+                    break;
+                case XmlElementNames.Status:
+                    this.status = MemberStatus[<string>jsObject[key]];
+                    break;
+                case XmlElementNames.Mailbox:
+                    this.AddressInformation = new EmailAddress();
+                    this.AddressInformation.LoadFromXmlJsObject(jsObject[key], service);
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+    /**
+     * @internal Writes the member key attribute to XML.
+     *
+     * @param   {EwsServiceXmlWriter}   writer   The writer.
+     */
+    WriteAttributesToXml(writer: EwsServiceXmlWriter): void {
+        // if this.key is null or empty, writer skips the attribute
+        writer.WriteAttributeValue(XmlAttributeNames.Key, this.key);
+    }
+
+    /**
+     * @internal Writes elements to XML.
+     *
+     * @param   {EwsServiceXmlWriter}   writer   The writer.
+     */
+    WriteElementsToXml(writer: EwsServiceXmlWriter): void {
+        // No need to write member Status back to server
+        // Write only AddressInformation container element
+        this.AddressInformation.WriteToXml(
+            writer,
+            XmlElementNames.Mailbox,
+            XmlNamespace.Types);
+    }
 }
-
-
-//}
-
-
-
-
 
 /**
  * Represents an AQS highlight term. 
@@ -23153,7 +21305,7 @@ export class RuleActions extends ComplexProperty {
 			this.ForwardToRecipients.WriteToXml(writer, XmlElementNames.ForwardToRecipients);
 		}
 
-		if (this.MarkImportance) {
+		if (hasValue(this.MarkImportance)) {
 			writer.WriteElementValue(
 				XmlNamespace.Types,
 				XmlElementNames.MarkImportance,
@@ -24203,7 +22355,7 @@ export class RulePredicates extends ComplexProperty {
 			this.ContainsSubjectStrings.WriteToXml(writer, XmlElementNames.ContainsSubjectStrings);
 		}
 
-		if (this.FlaggedForAction) {
+		if (hasValue(this.FlaggedForAction)) {
 			writer.WriteElementValue(
 				XmlNamespace.Types,
 				XmlElementNames.FlaggedForAction,
@@ -24225,7 +22377,7 @@ export class RulePredicates extends ComplexProperty {
 				this.HasAttachments);
 		}
 
-		if (this.Importance) {
+		if (hasValue(this.Importance)) {
 			writer.WriteElementValue(
 				XmlNamespace.Types,
 				XmlElementNames.Importance,
@@ -24356,7 +22508,7 @@ export class RulePredicates extends ComplexProperty {
 				this.SentToOrCcMe);
 		}
 
-		if (this.Sensitivity) {
+		if (hasValue(this.Sensitivity)) {
 			writer.WriteElementValue(
 				XmlNamespace.Types,
 				XmlElementNames.Sensitivity,
@@ -24866,7 +23018,7 @@ export class TimeChange extends ComplexProperty {
      * @param   {EwsServiceXmlWriter}   writer   The writer.
      */
     WriteElementsToXml(writer: EwsServiceXmlWriter): void {
-        if (this.Offset) {
+        if (hasValue(this.Offset)) {
             writer.WriteElementValue(
                 XmlNamespace.Types,
                 XmlElementNames.Offset,
@@ -24975,14 +23127,14 @@ export class TimeChangeRecurrence extends ComplexProperty {
      * @param   {EwsServiceXmlWriter}   writer   The writer.
      */
     WriteElementsToXml(writer: EwsServiceXmlWriter): void {
-        if (this.DayOfTheWeek) {
+        if (hasValue(this.DayOfTheWeek)) {
             writer.WriteElementValue(
                 XmlNamespace.Types,
                 XmlElementNames.DaysOfWeek,
                 this.DayOfTheWeek);
         }
 
-        if (this.dayOfTheWeekIndex) {
+        if (hasValue(this.dayOfTheWeekIndex)) {
             writer.WriteElementValue(
                 XmlNamespace.Types,
                 XmlElementNames.DayOfWeekIndex,
@@ -25728,16 +23880,18 @@ export class UserConfigurationDictionary extends ComplexProperty {//IEnumerable,
                     throw new ServiceLocalException(Strings.NullStringArrayElementInvalid);
                 }
             }
-            //check for byte[] for base64 conversion to single element //todo: byte[] conversion to base64 using Buffer
-            let dictionaryObjectAsByteArray: number[] = ArrayHelper.OfType<number, number>(dictionaryObject, (item) => { return typeof item === 'number' });
-            if (dictionaryObjectAsByteArray.length > 0 && dictionaryObjectAsByteArray.length === dictionaryObject.length) {
-                // Convert byte array to base64 string
-                dictionaryObjectType = UserConfigurationDictionaryObjectType.ByteArray;
-                valueAsString = Convert.ToBase64String(dictionaryObjectAsByteArray);
-                this.WriteEntryTypeToXml(writer, dictionaryObjectType);
-                this.WriteEntryValueToXml(writer, valueAsString);
-            } else {
-                throw new ServiceLocalException(Strings.NullStringArrayElementInvalid);
+            else {
+                //check for byte[] for base64 conversion to single element //todo: byte[] conversion to base64 using Buffer
+                let dictionaryObjectAsByteArray: number[] = ArrayHelper.OfType<number, number>(dictionaryObject, (item) => { return typeof item === 'number' });
+                if (dictionaryObjectAsByteArray.length > 0 && dictionaryObjectAsByteArray.length === dictionaryObject.length) {
+                    // Convert byte array to base64 string
+                    dictionaryObjectType = UserConfigurationDictionaryObjectType.ByteArray;
+                    valueAsString = Convert.ToBase64String(dictionaryObjectAsByteArray);
+                    this.WriteEntryTypeToXml(writer, dictionaryObjectType);
+                    this.WriteEntryValueToXml(writer, valueAsString);
+                } else {
+                    throw new ServiceLocalException(Strings.NullStringArrayElementInvalid);
+                }
             }
         }
         else {
@@ -26388,7 +24542,6 @@ export class FileAttachment extends Attachment {
      * @return  {string}      XML element name.
      */
     GetXmlElementName(): string { return XmlElementNames.FileAttachment; }
-    //InternalToJson(service: ExchangeService): any { throw new Error("FileAttachment.ts - InternalToJson : Not implemented."); }
     
     // /**
     //  * Loads the content of the file attachment into the specified stream. Calling this method results in a call to EWS.
@@ -26566,7 +24719,6 @@ export class ItemAttachment extends Attachment {
      */
     GetXmlElementName(): string { return XmlElementNames.ItemAttachment; }
 
-    //InternalToJson(service: ExchangeService): any { throw new Error("ItemAttachment.ts - InternalToJson : Not implemented."); }
 
     /**
      * Implements the OnChange event handler for the item associated with the attachment.
@@ -26695,16 +24847,41 @@ export class ItemAttachmentOf<TItem extends Item> extends ItemAttachment {
     }
 }
 //Moved to ItemAttachmentOf.ts for simplicity
+
+/**
+ * Represents an entry of a DictionaryProperty object.
+ * @remarks All descendants of DictionaryEntryProperty must implement a parameterless constructor. That constructor does not have to be public.
+ * @typeparam   {TKey}     The type of the key used by this dictionary.
+ * [EditorBrowsable(EditorBrowsableState.Never)]
+ */
 export class DictionaryEntryProperty<TKey> extends ComplexProperty {
-    protected keyType:any;
+
+    /** ews-javascript-api specific workaround for inheritance */
+    protected keyType: any;
+
     private key: TKey = null;
+
+    /**
+     * Gets or sets the key.
+     * @value   The key.
+     */
     get Key(): TKey {
         return this.key;
     }
     set Key(value: TKey) {
         this.key = value;
     }
+
+    /**
+     * @internal Initializes a new instance of the **DictionaryEntryProperty<TKey>** class.
+     *
+     */
     constructor();
+    /**
+     * @internal Initializes a new instance of the **DictionaryEntryProperty<TKey>** class.
+     *
+     * @param   {}   key   The key.
+     */
     constructor(key: TKey);
     constructor(key?: TKey) {
         super();
@@ -26712,14 +24889,38 @@ export class DictionaryEntryProperty<TKey> extends ComplexProperty {
     }
     /**@internal */
     ReadAttributesFromXmlJsObject(reader: EwsServiceXmlReader): void { throw new Error("DictionaryEntryProperty.ts - ReadAttributesFromXml : Not used."); }
-    /**@internal */
-    WriteAttributesToXml(writer: EwsServiceXmlWriter): void { writer.WriteAttributeValue(XmlAttributeNames.Key, this.keyType[this.Key]); }
-    WriteDeleteUpdateToJson(service: ExchangeService, ewsObject: ServiceObject, updates: any[] /*System.Collections.Generic.List<T>*/): boolean { throw new Error("DictionaryEntryProperty.ts - WriteDeleteUpdateToJson : Not implemented."); }
-    /**@internal */
-    WriteDeleteUpdateToXml(writer: EwsServiceXmlWriter, ewsObject: ServiceObject): boolean { return false; }
-    WriteSetUpdateToJson(service: ExchangeService, ewsObject: ServiceObject, propertyDefinition: PropertyDefinition, updates: any[]/*System.Collections.Generic.List<T>*/): boolean { throw new Error("DictionaryEntryProperty.ts - WriteSetUpdateToJson : Not implemented."); }
-    /**@internal */
-    WriteSetUpdateToXml(writer: EwsServiceXmlWriter, ewsObject: ServiceObject, ownerDictionaryXmlElementName: string): boolean { return false; }
+
+    /**
+     * @internal Writes attributes to XML.
+     * @override
+     * @param {EwsServiceXmlWriter} writer  The writer.
+     */
+    WriteAttributesToXml(writer: EwsServiceXmlWriter): void {
+        writer.WriteAttributeValue(XmlAttributeNames.Key, this.keyType[this.Key]);
+    }
+
+    /**
+     * @internal Writes the delete update to XML.
+     * @virtual
+     * @param   {EwsServiceXmlWriter}   writer      The writer.
+     * @param   {ServiceObject}         ewsObject   The ews object.
+     * @return  {boolean}               True if update XML was written.
+     */
+    WriteDeleteUpdateToXml(writer: EwsServiceXmlWriter, ewsObject: ServiceObject): boolean {
+        return false;
+    }
+
+    /**
+     * @internal Writes the set update to XML.
+     * @virtual
+     * @param   {EwsServiceXmlWriter}   writer                          The writer.
+     * @param   {ServiceObject}         ewsObject                       The ews object.
+     * @param   {string}                ownerDictionaryXmlElementName   Name of the owner dictionary XML element.
+     * @return  {boolean}               True if update XML was written.
+     */
+    WriteSetUpdateToXml(writer: EwsServiceXmlWriter, ewsObject: ServiceObject, ownerDictionaryXmlElementName: string): boolean {
+        return false;
+    }
 }
 export class EmailAddressEntry extends DictionaryEntryProperty<EmailAddressKey> {
     private emailAddress: EmailAddress = null;
@@ -26745,8 +24946,6 @@ export class EmailAddressEntry extends DictionaryEntryProperty<EmailAddressKey> 
         }
     }
     EmailAddressChanged(complexProperty: ComplexProperty): void { this.Changed(); }
-    InternalToJson(service: ExchangeService): any { throw new Error("EmailAddressEntry.ts - InternalToJson : Not implemented."); }
-    LoadFromJson(jsonProperty: any, service: ExchangeService): any { throw new Error("EmailAddressEntry.ts - LoadFromJson : Not implemented."); }
     LoadFromXmlJsObject(jsonProperty: any, service: ExchangeService): void {
         for (var key in jsonProperty) {
             switch (key) {
@@ -26807,8 +25006,6 @@ export class ImAddressEntry extends DictionaryEntryProperty<ImAddressKey> {
         this.imAddress = imAddress;
     }
 
-    InternalToJson(service: ExchangeService): any { throw new Error("ImAddressEntry.ts - InternalToJson : Not implemented."); }
-    LoadFromJson(jsonProperty: any, service: ExchangeService): any { throw new Error("ImAddressEntry.ts - LoadFromJson : Not implemented."); }
     LoadFromXmlJsObject(jsonProperty: any, service: ExchangeService): void {
         this.Key = <ImAddressKey><any>ImAddressKey[jsonProperty[XmlAttributeNames.Key]];
         this.ImAddress = jsonProperty[XmlElementNames.Entry];// ImAddress];//ElementValue becomes Same ElementName when it has attribute. 
@@ -26831,8 +25028,6 @@ export class PhoneNumberEntry extends DictionaryEntryProperty<PhoneNumberKey> {
         this.keyType= PhoneNumberKey;
         this.phoneNumber = phoneNumber;
     }
-    InternalToJson(service: ExchangeService): any { throw new Error("PhoneNumberEntry.ts - InternalToJson : Not implemented."); }
-    LoadFromJson(jsonProperty: JsonObject, service: ExchangeService): any { throw new Error("PhoneNumberEntry.ts - LoadFromJson : Not implemented."); }
     LoadFromXmlJsObject(jsonProperty: any, service: ExchangeService): void {
         this.Key = <PhoneNumberKey><any>PhoneNumberKey[jsonProperty[XmlAttributeNames.Key]];
         this.phoneNumber = jsonProperty[XmlElementNames.Entry];//PhoneNumber
@@ -27361,7 +25556,7 @@ export class EmailAddressDictionary extends DictionaryProperty<EmailAddressKey, 
      * @return  {boolean}                  true if the Dictionary contains an e-mail address associated with the specified key; otherwise, false.
      */
     TryGetValue(key: EmailAddressKey, emailAddress: IOutParam<EmailAddress>): boolean {
-        let entry: IOutParam<EmailAddressEntry> = null;
+        let entry: IOutParam<EmailAddressEntry> = { outValue: null };
 
         if (this.Entries.tryGetValue(key, entry)) {
             emailAddress.outValue = entry.outValue.EmailAddress;
@@ -28328,7 +26523,8 @@ export class MessageBody extends ComplexProperty {
                     //ref: IsTruncated not captured 
                     break;
                 default:
-                    debugger;//check exact name of body element
+                    //debugger;//check exact name of body element
+                    EwsLogging.Log(`MessageBody->LoadFromXmlJsObject : element ${key} is skipped, open issue to fix this. `, true)
                     break;
             }
         }
@@ -28941,16 +27137,51 @@ export class SetRuleOperation extends RuleOperation {
     }
 }
 
-
-export class ServiceId extends ComplexProperty {
-    public get IsValid(): boolean { return this.IsValidProxy(); }
-    protected IsValidProxy(): boolean { return !StringHelper.IsNullOrEmpty(this.UniqueId); } //proxy to be able to call super. from inherited child
+/**
+ * Represents the Id of an Exchange object.
+ *
+ * @abstract
+ * @class ServiceId
+ * @extends {ComplexProperty}
+ */
+export abstract class ServiceId extends ComplexProperty {
+    /**
+     *Gets the unique Id of the Exchange object.
+     *
+     * @type {string}
+     */
     UniqueId: string;
-    ChangeKey: string;
-    //private changeKey: string; not needed for proxy
-    //private uniqueId: string; - not needed for proxy
 
+    /**
+     *Gets the change key associated with the Exchange object. The change key represents the the version of the associated item or folder.
+     *
+     * @type {string}
+     */
+    ChangeKey: string;
+
+    /**
+     * True if this instance is valid, false otherthise.
+     * 
+     * @value   *true* if this instance is valid; otherwise, *false*.
+     */
+    public get IsValid(): boolean {
+        return this.IsValidProxy();
+    }
+
+    /** @internal IsValid proxy to be able to call super. from inherited child */
+    protected IsValidProxy(): boolean {
+        return !StringHelper.IsNullOrEmpty(this.UniqueId);
+    }
+
+    /**
+     * Initializes a new instance of the **ServiceId** class.
+     */
     constructor();
+    /**
+     * Initializes a new instance of the **ServiceId** class.
+     *
+     * @param   {string}   uniqueId   The unique id.
+     */
     constructor(uniqueId: string);
     constructor(uniqueId?: string) {
         super();
@@ -28960,10 +27191,23 @@ export class ServiceId extends ComplexProperty {
         }
     }
 
+    /**
+     * @internal Assigns from existing id.
+     *
+     * @param   {ServiceId}   source   The source.
+     */
     Assign(source: ServiceId): void {
         this.UniqueId = source.UniqueId;
         this.ChangeKey = source.ChangeKey;
     }
+
+    /**
+     * Determines whether the specified *ServiceId* is equal to the current *ServiceId*.
+     * We do not consider the ChangeKey for ServiceId.Equals.
+     *
+     * @param   {any}       obj   The  to compare with the current .
+     * @return  {boolean}   true if the specified  is equal to the current ; otherwise, false.
+     */
     Equals(obj: any): boolean {
         if (this === obj) {//object.ReferenceEquals(this, obj)) {
             return true;
@@ -28982,11 +27226,22 @@ export class ServiceId extends ComplexProperty {
             }
         }
     }
+
     //GetHashCode(): number { return this.IsValid ? this.UniqueId.GetHashCode() : super.GetHashCode();}
-    //GetJsonTypeName(): string { throw new Error("ServiceId.ts - GetJsonTypeName : Not implemented."); }
+
+    /**
+     * @internal Gets the name of the XML element.
+     *
+     * @return  {string}      XML element name.
+     */
     GetXmlElementName(): string { throw new Error("abstract method must implement."); }
-    //InternalToJson(service: ExchangeService): any { throw new Error("ServiceId.ts - InternalToJson : Not implemented."); }
-    //LoadFromJson(jsonProperty: JsonObject, service: ExchangeService): any { throw new Error("ServiceId.ts - LoadFromJson : Not implemented."); }
+
+    /**
+     * @internal Loads service object from XML.
+     *
+     * @param   {any}				jsObject	Json Object converted from XML.
+     * @param   {ExchangeService}	service	The service.    
+     */
     LoadFromXmlJsObject(jsObject: any, service: ExchangeService): void {
         for (var key in jsObject) {
             switch (key) {
@@ -29001,11 +27256,12 @@ export class ServiceId extends ComplexProperty {
             }
         }
     }
-    /**@internal */
-    ReadAttributesFromXmlJsObject(reader: EwsServiceXmlReader): void {
-        this.UniqueId = reader.ReadAttributeValue(null, XmlAttributeNames.Id);
-        this.ChangeKey = reader.ReadAttributeValue(null, XmlAttributeNames.ChangeKey);
-    }
+
+    /**
+     * Determines whether two ServiceId instances are equal (including ChangeKeys)
+     *
+     * @param   {ServiceId}   other   The ServiceId to compare with the current ServiceId.
+     */
     SameIdAndChangeKey(other: ServiceId): boolean {
         if (this.Equals(other)) {
             return ((this.ChangeKey == null) && (other.ChangeKey == null)) ||
@@ -29015,14 +27271,34 @@ export class ServiceId extends ComplexProperty {
             return false;
         }
     }
-    ToString(): string { return (this.UniqueId == null) ? "" : this.UniqueId; }
-    /**@internal */
+
+    /**
+     * Returns a *String* that represents the current *ServiceId*.
+     *
+     * @return  {string}      A *String* that represents the current *ServiceId*.
+     */
+    ToString(): string {
+        return (this.UniqueId == null) ? "" : this.UniqueId;
+    }
+
+    /**
+     * @internal Writes attributes to XML.
+     *
+     * @param   {EwsServiceXmlWriter}   writer   The writer.
+     */
     WriteAttributesToXml(writer: EwsServiceXmlWriter): void {
         writer.WriteAttributeValue(XmlAttributeNames.Id, this.UniqueId);
         writer.WriteAttributeValue(XmlAttributeNames.ChangeKey, this.ChangeKey);
     }
-    /** @internal */
-    WriteToXml(writer: EwsServiceXmlWriter, xmlElementName?: string, xmlNamespace?: XmlNamespace): void { //todo: fix third call with namespace
+
+    /**
+     * @internal Writes to XML.
+     *
+     * @param   {EwsServiceXmlWriter}   writer           The writer.
+     * @param   {string}                xmlElementName   Name of the XML element.
+     * @param   {XmlNamespace}          xmlNamespace     The XML namespace.
+     */
+    WriteToXml(writer: EwsServiceXmlWriter, xmlElementName?: string, xmlNamespace?: XmlNamespace): void {
         if (arguments.length > 2) {
             super.WriteToXml(writer, xmlElementName, xmlNamespace);
         }
@@ -29059,7 +27335,9 @@ export class ConversationId extends ServiceId {
      *
      * @return  {string}      XML element name.
      */
-    GetXmlElementName(): string { return XmlElementNames.ConversationId; }
+    GetXmlElementName(): string {
+        return XmlElementNames.ConversationId;
+    }
 
     /**
      * Gets a string representation of the Conversation Id.
@@ -29070,18 +27348,49 @@ export class ConversationId extends ServiceId {
         // We have ignored the change key portion
         return this.UniqueId;
     }
-    toString(): string { return this.ToString(); }
+    toString(): string {
+        return this.ToString();
+    }
 }
 
-
-
-
+/**
+ * Represents the Id of a folder.
+ *
+ * @class FolderId
+ * @extends {ServiceId}
+ */
 export class FolderId extends ServiceId {
-    get FolderName(): WellKnownFolderName { return this.folderName; }
-    get Mailbox(): Mailbox { return this.mailbox; }
+    private folderName: WellKnownFolderName;
+    private mailbox: Mailbox;
+
+    /**
+     * Gets the name of the folder associated with the folder Id. Name and Id are mutually exclusive; if one is set, the other is null.
+     *
+     * @readonly
+     * @type {WellKnownFolderName}
+     */
+    get FolderName(): WellKnownFolderName {
+        return this.folderName;
+    }
+
+    /**
+     * Gets the mailbox of the folder. Mailbox is only set when FolderName is set.
+     *
+     * @readonly
+     * @type {Mailbox}
+     */
+    get Mailbox(): Mailbox {
+        return this.mailbox;
+    }
+
+    /**
+     * True if this instance is valid, false otherthise.
+     * 
+     * @value   *true* if this instance is valid; otherwise, *false*.
+     */
     public get IsValid(): boolean {
 
-        if (this.FolderName) {
+        if (hasValue(this.FolderName)) {
             return (this.Mailbox == null) || this.Mailbox.IsValid;
         }
         else {
@@ -29089,21 +27398,49 @@ export class FolderId extends ServiceId {
         }
     }
 
-    private folderName: WellKnownFolderName;
-    private mailbox: Mailbox;
+    /**
+     * @internal Initializes a new instance of the **FolderId** class.
+    *
+    */
+    constructor();
+    /**
+     * Initializes a new instance of the **FolderId** class. Use this constructor to link this FolderId to an existing folder that you have the unique Id of.
+    *
+    * @param   {String} uniqueId The unique Id used to initialize the FolderId.
+    */
+    constructor(uniqueId: string);
+    /**
+     * Initializes a new instance of the **FolderId** class. Use this constructor to link this FolderId to a well known folder (e.g. Inbox, Calendar or Contacts).
+    *
+    * @param   {WellKnownFolderName}    folderName  The folder name used to initialize the FolderId.
+    */
+    constructor(folderName: WellKnownFolderName);
+    /**
+     * Initializes a new instance of the **FolderId** class. Use this constructor to link this FolderId to a well known folder (e.g. Inbox, Calendar or Contacts) in a specific mailbox.
+    *
+    * @param   {WellKnownFolderName}    folderName   The folder name used to initialize the FolderId.
+    * @param   {Mailbox}                mailbox      The mailbox used to initialize the FolderId.
+    */
+    constructor(folderName: WellKnownFolderName, mailbox: Mailbox);
+    constructor(uniqueIdOrFolderName?: string | WellKnownFolderName, mailbox?: Mailbox) {
+        arguments.length === 1 && typeof uniqueIdOrFolderName === 'string' ? super(uniqueIdOrFolderName) : super();
 
-    //    constructor(uniqueId?: string, folderName?: WellKnownFolderName, mailbox?: Mailbox) {
-    //        super(uniqueId);
-    //
-    //        this.mailbox = mailbox;
-    //        this.folderName = folderName;
-    //    }
-    constructor(folderName?: WellKnownFolderName, mailbox?: Mailbox) {
-        super();
+        if (arguments.length > 0 && typeof uniqueIdOrFolderName === 'number') {
 
-        this.mailbox = mailbox;
-        this.folderName = folderName;
+            this.folderName = uniqueIdOrFolderName;
+        }
+        if (arguments.length > 1) {
+            this.mailbox = mailbox;
+        }
     }
+
+    /**
+     * Determines whether the specified *FolderId* is equal to the current *FolderId*.
+     * We do not consider the ChangeKey for FolderId.Equals.
+     *
+     * @param   {any}       obj   The  to compare with the current .
+     * @return  {boolean}   true if the specified  is equal to the current ; otherwise, false.
+     */
     Equals(obj: any): boolean {
         if (this === obj) {
             return true;
@@ -29131,12 +27468,26 @@ export class FolderId extends ServiceId {
             return false;
         }
     }
+
     //GetHashCode(): number { throw new Error("FolderId.ts - GetHashCode : Not implemented."); }
-    GetXmlElementName(): string { return typeof this.folderName !== 'undefined' && this.FolderName >= 0 ? XmlElementNames.DistinguishedFolderId : XmlElementNames.FolderId; }
-    //InternalToJson(service: ExchangeService): any { throw new Error("FolderId.ts - InternalToJson : Not implemented."); }
+
+    /**
+     * @internal Gets the name of the XML element.
+     *
+     * @return  {string}      XML element name.
+     */
+    GetXmlElementName(): string {
+        return typeof this.folderName !== 'undefined' && this.FolderName >= 0 ? XmlElementNames.DistinguishedFolderId : XmlElementNames.FolderId;
+    }
+
+    /**
+     * Returns a *String* that represents the current *FolderId*.
+     *
+     * @return  {string}      A *String* that represents the current *FolderId*.
+     */
     ToString(): string {
         if (this.IsValid) {
-            if (this.FolderName) {
+            if (hasValue(this.FolderName)) {
                 if ((this.mailbox != null) && this.mailbox.IsValid) {
                     return StringHelper.Format("{0} ({1})", WellKnownFolderName[this.folderName], this.Mailbox.ToString());
                 }
@@ -29152,11 +27503,17 @@ export class FolderId extends ServiceId {
             return "";
         }
     }
+
+    /**
+     * @internal Validates FolderId against a specified request version.
+     *
+     * @param   {ExchangeVersion}   version   The version.
+     */
     Validate(version?: ExchangeVersion): void {
-        if (version) {
+        if (hasValue(version)) {
             // The FolderName property is a WellKnownFolderName, an enumeration type. If the property
             // is set, make sure that the value is valid for the request version.
-            if (this.FolderName) {
+            if (hasValue(this.FolderName)) {
                 EwsUtilities.ValidateEnumVersionValue(WellKnownFolderName, this.FolderName, version, "WellKnownFolderName");
             }
         }
@@ -29164,7 +27521,12 @@ export class FolderId extends ServiceId {
             super.Validate();
         }
     }
-    /**@internal */
+
+    /**
+     * @internal Writes attributes to XML.
+     *
+     * @param   {EwsServiceXmlWriter}   writer   The writer.
+     */
     WriteAttributesToXml(writer: EwsServiceXmlWriter): void {
         if (typeof this.folderName !== 'undefined' && this.FolderName >= 0) {
             writer.WriteAttributeValue(XmlAttributeNames.Id, WellKnownFolderName[this.FolderName].toLowerCase());
@@ -29178,8 +27540,24 @@ export class FolderId extends ServiceId {
         }
     }
 }
+
+/**
+ * Represents the Id of an Exchange item.
+ *
+ * @class ItemId
+ * @extends {ServiceId}
+ */
 export class ItemId extends ServiceId {
+
+    /**
+     * Initializes a new instance of the **ItemId**.
+     */
     constructor();
+    /**
+     * Initializes a new instance of the **ItemId**.
+     *
+     * @param   {String} uniqueId   The unique Id used to initialize the ItemId
+     */
     constructor(uniqueId: string);
     constructor(uniqueId?: string) {
         if (arguments.length === 0) {
@@ -29188,7 +27566,15 @@ export class ItemId extends ServiceId {
         }
         super(uniqueId);
     }
-    GetXmlElementName(): string { return XmlElementNames.ItemId; }
+
+    /**
+     * @internal Gets the name of the XML element.
+     *
+     * @return  {string}      XML element name.
+     */
+    GetXmlElementName(): string {
+        return XmlElementNames.ItemId;
+    }
 }
 
 export class AppointmentOccurrenceId extends ItemId {
@@ -30673,7 +29059,6 @@ export class ExtendedPropertyCollection extends ComplexPropertyCollection<Extend
         }
         return extendedProperty.outValue;
     }
-    InternalToJson(service: ExchangeService): any { throw new Error("ExtendedPropertyCollection.ts - InternalToJson : Not implemented."); }
     LoadFromXmlJsObject(jsObject: any, service: ExchangeService): void {//localElementName: string
         var extendedProperty = new ExtendedProperty();
         //debugger; //debug: //todo: check for need of local element -not tested
@@ -30718,6 +29103,64 @@ export class ExtendedPropertyCollection extends ComplexPropertyCollection<Extend
             return false;
         }
     }
+
+    /**
+     * @internal Writes the deletion update to XML.
+     * ICustomUpdateSerializer.WriteDeleteUpdateToXml
+     *
+     * @param   {EwsServiceXmlWriter}   writer      The writer.
+     * @param   {ServiceObject}         ewsObject   The ews object.
+     * @return  {boolean}               True if property generated serialization.
+     */
+    WriteDeleteUpdateToXml(writer: EwsServiceXmlWriter, ewsObject: ServiceObject): boolean {
+        // Use the default XML serializer.
+        for (let extendedProperty of this.Items) {
+            writer.WriteStartElement(XmlNamespace.Types, ewsObject.GetDeleteFieldXmlElementName());
+            extendedProperty.PropertyDefinition.WriteToXml(writer);
+            writer.WriteEndElement();
+        }
+
+        return true;
+    }
+
+    /**
+     * @internal Writes the update to XML.
+     * ICustomUpdateSerializer.WriteSetUpdateToXml
+     *
+     * @param   {EwsServiceXmlWriter}   writer               The writer.
+     * @param   {ServiceObject}         ewsObject            The ews object.
+     * @param   {PropertyDefinition}    propertyDefinition   Property definition.
+     * @return  {boolean}               True if property generated serialization.
+     */
+    WriteSetUpdateToXml(
+        writer: EwsServiceXmlWriter,
+        ewsObject: ServiceObject,
+        propertyDefinition: PropertyDefinition): boolean {
+        let propertiesToSet: ExtendedProperty[] = [];
+
+        ArrayHelper.AddRange(propertiesToSet, this.AddedItems);
+        ArrayHelper.AddRange(propertiesToSet, this.ModifiedItems);
+
+        for (let extendedProperty of propertiesToSet) {
+            writer.WriteStartElement(XmlNamespace.Types, ewsObject.GetSetFieldXmlElementName());
+            extendedProperty.PropertyDefinition.WriteToXml(writer);
+
+            writer.WriteStartElement(XmlNamespace.Types, ewsObject.GetXmlElementName());
+            extendedProperty.WriteToXml(writer, XmlElementNames.ExtendedProperty);
+            writer.WriteEndElement();
+
+            writer.WriteEndElement();
+        }
+
+        for (let extendedProperty of this.RemovedItems) {
+            writer.WriteStartElement(XmlNamespace.Types, ewsObject.GetDeleteFieldXmlElementName());
+            extendedProperty.PropertyDefinition.WriteToXml(writer);
+            writer.WriteEndElement();
+        }
+
+        return true;
+    }
+
     /**@internal */
     WriteToXml(writer: EwsServiceXmlWriter, xmlElementName: string): void {
         for (var extendedProperty of this.Items) {
@@ -30984,7 +29427,7 @@ export class FolderPermissionCollection extends ComplexPropertyCollection<Folder
         if (jsonFolderPermissions && jsonFolderPermissions[this.CollectionItemXmlElementName])
             jsonFolderPermissions = jsonFolderPermissions[this.CollectionItemXmlElementName];
         if (!Array.isArray(jsonFolderPermissions)) {
-            debugger;
+            //debugger;
             throw new Error("FolderPermissionCollection.ts - LoadFromXmlJsObject - Invalid xml parsing, jsonproperty must contain collectionxmlelementname and collectionitemelementname underneeth");
         }
         for (let jsonFolderPermission of jsonFolderPermissions) {
@@ -30995,7 +29438,7 @@ export class FolderPermissionCollection extends ComplexPropertyCollection<Folder
         if (jsObjectCollection[XmlElementNames.UnknownEntries]) {
             let jsonUnknownEntries: any[] = jsObjectCollection[XmlElementNames.UnknownEntries];
             if (typeof jsonUnknownEntries !== 'object' && !Array.isArray(jsonFolderPermissions)) {
-                debugger;
+                //debugger;
                 throw new Error("FolderPermissionCollection.ts - LoadFromXmlJsObject - Invalid xml returned - check for consistency, UnknownEntries must be array type");
             }
 
@@ -31053,44 +29496,384 @@ export class FolderPermissionCollection extends ComplexPropertyCollection<Folder
 }
 
 
-export class GroupMemberCollection extends ComplexPropertyCollection<GroupMember> {
-        private collectionIsCleared: boolean;
-        Add(member: GroupMember): any { throw new Error("GroupMemberCollection.ts - Add : Not implemented."); }
-        AddContactEmailAddress(contact: Contact, emailAddressKey: EmailAddressKey): any { throw new Error("GroupMemberCollection.ts - AddContactEmailAddress : Not implemented."); }
-        AddContactGroup(contactGroupId: ItemId): any { throw new Error("GroupMemberCollection.ts - AddContactGroup : Not implemented."); }
-        AddDirectoryContact(address: string, routingType: string): any { throw new Error("GroupMemberCollection.ts - AddDirectoryContact : Not implemented."); }
-        //AddDirectoryContact(smtpAddress: string): any { throw new Error("GroupMemberCollection.ts - AddDirectoryContact : Not implemented."); }
-        AddDirectoryPublicFolder(smtpAddress: string): any { throw new Error("GroupMemberCollection.ts - AddDirectoryPublicFolder : Not implemented."); }
-        AddDirectoryUser(address: string, routingType: string): any { throw new Error("GroupMemberCollection.ts - AddDirectoryUser : Not implemented."); }
-        //AddDirectoryUser(smtpAddress: string): any { throw new Error("GroupMemberCollection.ts - AddDirectoryUser : Not implemented."); }
-        AddOneOff(displayName: string, address: string, routingType: string): any { throw new Error("GroupMemberCollection.ts - AddOneOff : Not implemented."); }
-        //AddOneOff(displayName: string, smtpAddress: string): any { throw new Error("GroupMemberCollection.ts - AddOneOff : Not implemented."); }
-        AddPersonalContact(contactId: ItemId): any { throw new Error("GroupMemberCollection.ts - AddPersonalContact : Not implemented."); }
-        //AddPersonalContact(contactId: ItemId, addressToLink: string): any { throw new Error("GroupMemberCollection.ts - AddPersonalContact : Not implemented."); }
-        AddPublicGroup(smtpAddress: string): any { throw new Error("GroupMemberCollection.ts - AddPublicGroup : Not implemented."); }
-        AddRange(members:GroupMember[] /*System.Collections.Generic.IEnumerable<T>*/): any { throw new Error("GroupMemberCollection.ts - AddRange : Not implemented."); }
-        Clear(): any { throw new Error("GroupMemberCollection.ts - Clear : Not implemented."); }
-        ClearChangeLog(): any { throw new Error("GroupMemberCollection.ts - ClearChangeLog : Not implemented."); }
-        CreateComplexProperty(xmlElementName: string): GroupMember { throw new Error("GroupMemberCollection.ts - CreateComplexProperty : Not implemented."); }
-        CreateDefaultComplexProperty(): GroupMember { throw new Error("GroupMemberCollection.ts - CreateDefaultComplexProperty : Not implemented."); }
-        Find(key: string): GroupMember { throw new Error("GroupMemberCollection.ts - Find : Not implemented."); }
-        GetCollectionItemXmlElementName(member: GroupMember): string { throw new Error("GroupMemberCollection.ts - GetCollectionItemXmlElementName : Not implemented."); }
-        InternalValidate(): any { throw new Error("GroupMemberCollection.ts - InternalValidate : Not implemented."); }
-        Remove(member: GroupMember): boolean { throw new Error("GroupMemberCollection.ts - Remove : Not implemented."); }
-        RemoveAt(index: number): any { throw new Error("GroupMemberCollection.ts - RemoveAt : Not implemented."); }
-        /**@internal */
-        WriteDeleteMembersCollectionToXml(writer: EwsServiceXmlWriter): any { throw new Error("GroupMemberCollection.ts - WriteDeleteMembersCollectionToXml : Not implemented."); }
-        /**@internal */
-        WriteDeleteMembersToXml(writer: EwsServiceXmlWriter, members: GroupMember[] /* System.Collections.Generic.List<GroupMember>*/): any { throw new Error("GroupMemberCollection.ts - WriteDeleteMembersToXml : Not implemented."); }
-        /**@internal */
-        WriteSetOrAppendMembersToXml(writer: EwsServiceXmlWriter, members: GroupMember[] /*System.Collections.Generic.List<GroupMember>*/, setMode: boolean): any { throw new Error("GroupMemberCollection.ts - WriteSetOrAppendMembersToXml : Not implemented."); }
+
+/**
+ * Represents a collection of members of GroupMember type.
+ * @sealed
+ */
+export class GroupMemberCollection extends ComplexPropertyCollection<GroupMember> implements ICustomUpdateSerializer {
+
+    /**
+     * If the collection is cleared, then store PDL members collection is updated with "SetItemField". If the collection is not cleared, then store PDL members collection is updated with "AppendToItemField".
+     *
+     */
+    private collectionIsCleared: boolean = false;
+
+    /**
+     * Initializes a new instance of the  class.
+     *
+     */
+    constructor() {
+        super();
     }
 
+    /**
+     * Adds a member to the collection.
+     *
+     * @param   {GroupMember}   member   The member to add.
+     */
+    Add(member: GroupMember): void {
+        EwsUtilities.ValidateParam(member, "member");
 
-//}
+        EwsLogging.Assert(
+            member.Key == null,
+            "GroupMemberCollection.Add",
+            "member.Key is not null.");
 
+        EwsLogging.Assert(
+            !this.Contains(member),
+            "GroupMemberCollection.Add",
+            "The member is already in the collection");
 
+        this.InternalAdd(member);
+    }
 
+    /**
+     * Adds a member that is linked to a specific e-mail address of a contact.
+     *
+     * @param   {Contact}   contact           The contact to link to.
+     * @param   {EmailAddressKey}   emailAddressKey   The contact's e-mail address to link to.
+     */
+    AddContactEmailAddress(contact: Contact, emailAddressKey: EmailAddressKey): void {
+        this.Add(new GroupMember(contact, emailAddressKey));
+    }
+
+    /**
+     * Adds a member linked to a Contact Group.
+     *
+     * @param   {ItemId}   contactGroupId   The Id of the contact group.
+     */
+    AddContactGroup(contactGroupId: ItemId): void {
+        this.Add(new GroupMember(contactGroupId));
+    }
+
+    /**
+     * Adds a member linked to an Active Directory contact.
+     *
+     * @param   {string}   smtpAddress   The SMTP address of the Active Directory contact.
+     */
+    AddDirectoryContact(smtpAddress: string): void;
+    /**
+     * Adds a member linked to an Active Directory contact.
+     *
+     * @param   {string}   address       The address of the Active Directory contact.
+     * @param   {string}   routingType   The routing type of the address.
+     */
+    AddDirectoryContact(address: string, routingType: string): void;
+    AddDirectoryContact(address: string, routingType: string = EmailAddress.SmtpRoutingType): void {
+        this.Add(new GroupMember(address, routingType, MailboxType.Contact));
+    }
+
+    /**
+     * Adds a member linked to a mail-enabled Public Folder.
+     *
+     * @param   {string}   smtpAddress   The SMTP address of the mail-enabled Public Folder.
+     */
+    AddDirectoryPublicFolder(smtpAddress: string): void {
+        this.Add(new GroupMember(smtpAddress, EmailAddress.SmtpRoutingType, MailboxType.PublicFolder));
+    }
+
+    /**
+     * Adds a member linked to an Active Directory user.
+     *
+     * @param   {string}   smtpAddress   The SMTP address of the member.
+     */
+    AddDirectoryUser(smtpAddress: string): void;
+    /**
+     * Adds a member linked to an Active Directory user.
+     *
+     * @param   {string}   address       The address of the member.
+     * @param   {string}   routingType   The routing type of the address.
+     */
+    AddDirectoryUser(address: string, routingType: string): void;
+    AddDirectoryUser(address: string, routingType: string = EmailAddress.SmtpRoutingType): void {
+        this.Add(new GroupMember(address, routingType, MailboxType.Mailbox));
+    }
+
+    /**
+     * Adds a one-off member.
+     *
+     * @param   {string}   displayName   The display name of the member.
+     * @param   {string}   smtpAddress   The SMTP address of the member.
+     */
+    AddOneOff(displayName: string, smtpAddress: string): void;
+    /**
+     * Adds a one-off member.
+     *
+     * @param   {string}   displayName   The display name of the member.
+     * @param   {string}   address       The address of the member.
+     * @param   {string}   routingType   The routing type of the address.
+     */
+    AddOneOff(displayName: string, address: string, routingType: string): void;
+    AddOneOff(displayName: string, address: string, routingType: string = EmailAddress.SmtpRoutingType): void {
+        this.Add(new GroupMember(displayName, address, routingType));
+    }
+
+    /**
+     * Adds a member linked to a contact's first available e-mail address.
+     *
+     * @param   {ItemId}   contactId   The Id of the contact.
+     */
+    AddPersonalContact(contactId: ItemId): void;
+    /**
+     * Adds a member linked to a specific contact's e-mail address.
+     *
+     * @param   {ItemId}   contactId       The Id of the contact.
+     * @param   {string}   addressToLink   The contact's address to link to.
+     */
+    AddPersonalContact(contactId: ItemId, addressToLink: string): void;
+    AddPersonalContact(contactId: ItemId, addressToLink: string = null): void {
+        this.Add(new GroupMember(contactId, addressToLink));
+    }
+
+    /**
+     * Adds a member linked to a Public Group.
+     *
+     * @param   {string}   smtpAddress   The SMTP address of the Public Group.
+     */
+    AddPublicGroup(smtpAddress: string): void {
+        this.Add(new GroupMember(smtpAddress, EmailAddress.SmtpRoutingType, MailboxType.PublicGroup));
+    }
+
+    /**
+     * Adds multiple members to the collection.
+     *
+     * @param   {GroupMember[]}   members   The members to add.
+     */
+    AddRange(members: GroupMember[] /*IEnumerable<T>*/): void {
+        EwsUtilities.ValidateParam(members, "members");
+
+        for (let member of members) {
+            this.Add(member);
+        }
+    }
+
+    /**
+     * Clears the collection.
+     */
+    Clear(): void {
+        // mark the whole collection for deletion
+        this.InternalClear();
+        this.collectionIsCleared = true;
+    }
+
+    /**
+     * @internal Clears the change log.
+     *
+     */
+    ClearChangeLog(): void {
+        super.ClearChangeLog();
+        this.collectionIsCleared = false;
+    }
+
+    /**
+     * @internal Creates a GroupMember object from an XML element name.
+     *
+     * @param   {string}        xmlElementName   The XML element name from which to create the e-mail address.
+     * @return  {GroupMember}   An GroupMember object.
+     */
+    CreateComplexProperty(xmlElementName: string): GroupMember {
+        return new GroupMember();
+    }
+
+    /**
+     * @internal Creates the default complex property.
+     *
+     * @return  {GroupMember}      An GroupMember object.
+     */
+    CreateDefaultComplexProperty(): GroupMember {
+        return new GroupMember();
+    }
+
+    /**
+     * Finds the member with the specified key in the collection. 
+     * Members that have not yet been saved do not have a key.
+     *
+     * @param   {}   key   The key of the member to find.
+     * @return  {}         The member with the specified key.
+     */
+    Find(key: string): GroupMember {
+        EwsUtilities.ValidateParam(key, "key");
+
+        for (let item of this.Items) {
+            if (item.Key == key) {
+                return item;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @internal Retrieves the XML element name corresponding to the provided GroupMember object.
+     *
+     * @param   {GroupMember}   member   The GroupMember object from which to determine the XML element name.
+     * @return  {string}            The XML element name corresponding to the provided GroupMember object.
+     */
+    GetCollectionItemXmlElementName(member: GroupMember): string {
+        return XmlElementNames.Member;
+    }
+
+    /**
+     * @internal Validates this instance.
+     */
+    InternalValidate(): void {
+        super.InternalValidate();
+
+        for (let groupMember of this.ModifiedItems) {
+            if (StringHelper.IsNullOrEmpty(groupMember.Key)) {
+                throw new ServiceValidationException(Strings.ContactGroupMemberCannotBeUpdatedWithoutBeingLoadedFirst);
+            }
+        }
+    }
+
+    /**
+     * Removes a member from the collection.
+     *
+     * @param   {GroupMember}   member   The member to remove.
+     * @return  {boolean}       True if the group member was successfully removed from the collection, false otherwise.
+     */
+    Remove(member: GroupMember): boolean {
+        return this.InternalRemove(member);
+    }
+
+    /**
+     * Removes a member at the specified index.
+     *
+     * @param   {number}   index   The index of the member to remove.
+     */
+    RemoveAt(index: number): void {
+        if (index < 0 || index >= this.Count) {
+            throw new ArgumentOutOfRangeException("index", Strings.IndexIsOutOfRange);
+        }
+
+        this.InternalRemoveAt(index);
+    }
+
+    /**
+     * Delete the whole members collection.
+     *
+     * @param   {EwsServiceXmlWriter}   writer   Xml writer.
+     */
+    private WriteDeleteMembersCollectionToXml(writer: EwsServiceXmlWriter): void {
+        writer.WriteStartElement(XmlNamespace.Types, XmlElementNames.DeleteItemField);
+        ContactGroupSchema.Members.WriteToXml(writer);
+        writer.WriteEndElement();
+    }
+
+    /**
+     * Generate XML to delete individual members.
+     *
+     * @param   {EwsServiceXmlWriter}   writer    Xml writer.
+     * @param   {GroupMember[]}         members   Members to delete.
+     */
+    private WriteDeleteMembersToXml(writer: EwsServiceXmlWriter, members: GroupMember[] /* List<GroupMember>*/): void {
+        if (members.length != 0) {
+            let memberPropDef: GroupMemberPropertyDefinition = new GroupMemberPropertyDefinition();
+
+            for (let member of members) {
+                writer.WriteStartElement(XmlNamespace.Types, XmlElementNames.DeleteItemField);
+
+                memberPropDef.Key = member.Key;
+                memberPropDef.WriteToXml(writer);
+
+                writer.WriteEndElement();   // DeleteItemField
+            }
+        }
+    }
+
+    /**
+     * Generate XML to Set or Append members. When members are set, the existing PDL member collection is cleared On append members are added to the PDL existing members collection.
+     *
+     * @param   {EwsServiceXmlWriter}   writer    Xml writer.
+     * @param   {GroupMember[]}         members   Members to set or append.
+     * @param   {boolean}               setMode   True - set members, false - append members.
+     */
+    private WriteSetOrAppendMembersToXml(writer: EwsServiceXmlWriter, members: GroupMember[] /*List<GroupMember>*/, setMode: boolean): void {
+        if (members.length != 0) {
+            writer.WriteStartElement(XmlNamespace.Types, setMode ? XmlElementNames.SetItemField : XmlElementNames.AppendToItemField);
+
+            ContactGroupSchema.Members.WriteToXml(writer);
+
+            writer.WriteStartElement(XmlNamespace.Types, XmlElementNames.DistributionList);
+            writer.WriteStartElement(XmlNamespace.Types, XmlElementNames.Members);
+
+            for (let member of members) {
+                member.WriteToXml(writer, XmlElementNames.Member);
+            }
+
+            writer.WriteEndElement();   // Members
+            writer.WriteEndElement();   // Group
+            writer.WriteEndElement();   // setMode ? SetItemField : AppendItemField
+        }
+    }
+
+    //#region ICustomUpdateSerializer
+
+    /**
+     * @internal Writes the deletion update to XML.
+     * ICustomUpdateSerializer.WriteDeleteUpdateToXml
+     *
+     * @param   {EwsServiceXmlWriter}   writer      The writer.
+     * @param   {ServiceObject}         ewsObject   The ews object.
+     * @return  {boolean}               True if property generated serialization.
+     */
+    WriteDeleteUpdateToXml(writer: EwsServiceXmlWriter, ewsObject: ServiceObject): boolean {
+        return false;
+    }
+
+    /**
+     * @internal Writes the update to XML.
+     * ICustomUpdateSerializer.WriteSetUpdateToXml
+     *
+     * @param   {EwsServiceXmlWriter}   writer               The writer.
+     * @param   {ServiceObject}         ewsObject            The ews object.
+     * @param   {PropertyDefinition}    propertyDefinition   Property definition.
+     * @return  {boolean}               True if property generated serialization.
+     */
+    WriteSetUpdateToXml(
+        writer: EwsServiceXmlWriter,
+        ewsObject: ServiceObject,
+        propertyDefinition: PropertyDefinition): boolean {
+
+        if (this.collectionIsCleared) {
+            if (this.AddedItems.length == 0) {
+                // Delete the whole members collection
+                this.WriteDeleteMembersCollectionToXml(writer);
+            }
+            else {
+                // The collection is cleared, so Set
+                this.WriteSetOrAppendMembersToXml(writer, this.AddedItems, true);
+            }
+        }
+        else {
+            // The collection is not cleared, i.e. dl.Members.Clear() is not called.
+            // Append AddedItems.
+            this.WriteSetOrAppendMembersToXml(writer, this.AddedItems, false);
+
+            // Since member replacement is not supported by server
+            // Delete old ModifiedItems, then recreate new instead.
+            this.WriteDeleteMembersToXml(writer, this.ModifiedItems);
+            this.WriteSetOrAppendMembersToXml(writer, this.ModifiedItems, false);
+
+            // Delete RemovedItems.
+            this.WriteDeleteMembersToXml(writer, this.RemovedItems);
+        }
+
+        return true;
+    }
+    //#endregion
+}
 
 /**
  * Represents a collection of Internet message headers.
@@ -31802,7 +30585,7 @@ export class ExtendedPropertyDefinition extends PropertyDefinitionBase {
      * @return  {string}                Formatted value.
      */
     FormatField(name: string, fieldValue: string): string {
-        debugger;
+        //debugger;
         return (fieldValue != null)
             ? StringHelper.Format(ExtendedPropertyDefinition.FieldFormat, name, fieldValue)
             : "";
@@ -31868,11 +30651,11 @@ export class ExtendedPropertyDefinition extends PropertyDefinitionBase {
         for (var key in jsObject) {
             switch (key) {
                 case XmlAttributeNames.DistinguishedPropertySetId:
-                    debugger;
+                    //debugger;
                     this.propertySet = isNaN(jsObject[key]) ? DefaultExtendedPropertySet[jsObject[key]] : <any><DefaultExtendedPropertySet>+(jsObject[key]);// jsObject.ReadEnumValue<DefaultExtendedPropertySet>(key);
                     break;
                 case XmlAttributeNames.PropertySetId:
-                    debugger;
+                    //debugger;
                     this.propertySetId = new Guid(jsObject[key]);// new Guid(jsObject.ReadAsString(key));
                     break;
                 case XmlAttributeNames.PropertyTag:
@@ -31899,7 +30682,7 @@ export class ExtendedPropertyDefinition extends PropertyDefinitionBase {
      * @param   {EwsServiceXmlWriter}   writer   The writer.
      */
     WriteAttributesToXml(writer: EwsServiceXmlWriter): void {
-        if (this.propertySet) {
+        if (!isNullOrUndefined(this.propertySet)) {
             writer.WriteAttributeValue(XmlAttributeNames.DistinguishedPropertySetId, DefaultExtendedPropertySet[this.propertySet]);
         }
         if (this.propertySetId) {
@@ -31923,13 +30706,13 @@ export class ExtendedPropertyDefinition extends PropertyDefinitionBase {
  * ExtendedPropertyDefinition interface to be used with TypeContainer - removes circular dependency
  */
 export interface IExtendedPropertyDefinition {
-    new (): ExtendedPropertyDefinition;
-    new (mapiType: MapiPropertyType): ExtendedPropertyDefinition;
-    new (tag: number, mapiType: MapiPropertyType): ExtendedPropertyDefinition;
-    new (propertySet: DefaultExtendedPropertySet, name: string, mapiType: MapiPropertyType): ExtendedPropertyDefinition;
-    new (propertySet: DefaultExtendedPropertySet, id: number, mapiType: MapiPropertyType): ExtendedPropertyDefinition;
-    new (propertySetId: Guid, name: string, mapiType: MapiPropertyType): ExtendedPropertyDefinition;
-    new (propertySetId: Guid, id: number, mapiType: MapiPropertyType): ExtendedPropertyDefinition;
+    new(): ExtendedPropertyDefinition;
+    new(mapiType: MapiPropertyType): ExtendedPropertyDefinition;
+    new(tag: number, mapiType: MapiPropertyType): ExtendedPropertyDefinition;
+    new(propertySet: DefaultExtendedPropertySet, name: string, mapiType: MapiPropertyType): ExtendedPropertyDefinition;
+    new(propertySet: DefaultExtendedPropertySet, id: number, mapiType: MapiPropertyType): ExtendedPropertyDefinition;
+    new(propertySetId: Guid, name: string, mapiType: MapiPropertyType): ExtendedPropertyDefinition;
+    new(propertySetId: Guid, id: number, mapiType: MapiPropertyType): ExtendedPropertyDefinition;
 }
 
 
@@ -32391,7 +31174,7 @@ export class EffectiveRightsPropertyDefinition extends PropertyDefinition {
                 }
             }
         }
-        propertyBag._setItem(this, jsObject);
+        propertyBag._setItem(this, effectiveRightsValue);
     }
 
     /**
@@ -32926,7 +31709,7 @@ export class ScopedDateTimePropertyDefinition extends DateTimePropertyDefinition
      * @return  {DateTime}              The converted DateTime.
      */
     ScopeToTimeZone(service: ExchangeServiceBase, dateTime: DateTime, propertyBag: PropertyBag, isUpdateOperation: boolean): DateTime {
-        EwsLogging.Assert(false, "ScopedDateTimePropertyDefinition.ScopeToTimeZone", "[Info]:  TimeZone info has been updated, Please report any bugs to github", true);
+        EwsLogging.DebugLog("[ScopedDateTimePropertyDefinition.ScopeToTimeZone]: TimeZone info has been updated, Please report any bugs to github");
         if (!propertyBag.Owner.GetIsCustomDateTimeScopingRequired()) {
             // Most item types do not require a custom scoping mechanism. For those item types,
             // use the default scoping mechanism.
@@ -33292,6 +32075,12 @@ export class GenericPropertyDefinition<TPropertyValue> extends TypedPropertyDefi
         if (TypeGuards.hasEwsEnumAttribute(this.enumType)) {
             return this.enumType.FromEwsEnumString(value);
         }
+
+        // if enum type is set, use this to get enum number instead of string
+        if(this.enumType && typeof value === 'string') {
+            return this.enumType[value];
+        }
+
         EwsLogging.Assert(false, "GenericPropertyDefinition<TPropertyValue>.Parse", "GenericPropertyDefinition<TPropertyValue> needs to be improved");
         return value;
     }
@@ -33303,14 +32092,19 @@ export class GenericPropertyDefinition<TPropertyValue> extends TypedPropertyDefi
      * @return  {string}        String representation of property value.
      */
     ToString(value?: any): string {
-        if (value) {
-            if (TypeGuards.hasEwsEnumAttribute(this.enumType)) {
-                this.enumType.ToEwsEnumString(value);
-            }
-            else
-                return value.toString();
+        if (value === void 0 || value === null) {
+            throw new Error("GenericPropertyDefinition: incorrect call of ToString(value): value is undefined/null");
         }
-        throw new Error("GenericPropertyDefinition: incorrect call of ToString(value): value is undefined");
+
+        if (TypeGuards.hasEwsEnumAttribute(this.enumType)) {
+            return this.enumType.ToEwsEnumString(value);
+        }
+
+        if(this.enumType && typeof value === "number") {
+            return this.enumType[value];
+        }
+
+        return value.toString();
     }
     toString(value?: any): string {
         return this.ToString(value);
@@ -33736,7 +32530,7 @@ export abstract class ComplexPropertyDefinitionBase extends PropertyDefinition {
      */
     WritePropertyValueToXml(writer: EwsServiceXmlWriter, propertyBag: PropertyBag, isUpdateOperation: boolean): void {
         var complexProperty: ComplexProperty = <ComplexProperty>propertyBag._getItem(this);
-        debugger;
+        //debugger;
         if (complexProperty) {
             complexProperty.WriteToXml(writer, this.XmlElementName);
         }
@@ -34036,7 +32830,7 @@ export class TimeZonePropertyDefinition extends PropertyDefinition {
      * @param   {PropertyBag}       propertyBag   The property bag.
      */
     LoadPropertyValueFromXmlJsObject(jsObject: any, service: ExchangeService, propertyBag: PropertyBag): void {
-        EwsLogging.Assert(false, "TimeZonePropertyDefinition.LoadPropertyValueFromXmlJsObject", "TimeZone info has been updated, Please report any bugs to github");
+        EwsLogging.DebugLog("[TimeZonePropertyDefinition.LoadPropertyValueFromXmlJsObject]: TimeZone info has been updated, Please report any bugs to github");
         let timeZoneDefinition: TimeZoneDefinition = new TimeZoneDefinition();
 
         if (jsObject) {
@@ -34054,7 +32848,7 @@ export class TimeZonePropertyDefinition extends PropertyDefinition {
      * @param   {boolean}               isUpdateOperation   Indicates whether the context is an update operation.
      */
     WritePropertyValueToXml(writer: EwsServiceXmlWriter, propertyBag: PropertyBag, isUpdateOperation: boolean): void {
-        EwsLogging.Assert(false, "TimeZonePropertyDefinition.WritePropertyValueToXml", "[Info]:  TimeZone info has been updated, Please report any bugs to github", true);
+        EwsLogging.DebugLog("[TimeZonePropertyDefinition.WritePropertyValueToXml]: TimeZone info has been updated, Please report any bugs to github");        
         let value = <TimeZoneInfo>propertyBag._getItem(this);
 
         if (value != null) {
@@ -34063,8 +32857,7 @@ export class TimeZonePropertyDefinition extends PropertyDefinition {
             // is being emitted.
             if (!writer.IsTimeZoneHeaderEmitted || value != writer.Service.TimeZone) {
                 let timeZoneDefinition: TimeZoneDefinition = new TimeZoneDefinition(value);
-
-                timeZoneDefinition.WriteToXml(writer);
+                timeZoneDefinition.WriteToXml(writer, this.XmlElementName);
             }
         }
     }
@@ -34228,7 +33021,7 @@ declare var require: any;
 
 
 export class EwsLogging {
-    static DebugLogEnabled: boolean = true;
+    static DebugLogEnabled: boolean = false;
     static Assert(condition: boolean, caller: string, message: string, always: boolean = false): void {
         if ((this.DebugLogEnabled || always) && !condition)
             console.log(StringHelper.Format("[{0}] {1}", caller, message));
@@ -34306,8 +33099,8 @@ export class EwsServiceJsonReader {
                             summaryPropertiesOnly);
                         serviceObjects.push(serviceObject);
                     }
-                    else
-                        debugger;
+                    // else
+                    //     debugger;
                 }
             }
 
@@ -34711,7 +33504,7 @@ export class EwsServiceXmlWriter {
                     strValue = EwsUtilities.BoolToXSBool(<boolean>value);
                     break;
                 case "number":
-                    strValue = value;
+                    strValue = value.toString();
                     //todo check for datetime
                     //strValue = this.Service.ConvertDateTimeToUniversalDateTimeString((DateTime) value);
                     break;
@@ -34967,7 +33760,7 @@ export type RequiredServerVersionEnums = typeof ConversationQueryTraversal | typ
 
 /**
  * @internal EWS utilities
- * 
+ *
  * @static
  */
 export class EwsUtilities {
@@ -35366,10 +34159,10 @@ export class EwsUtilities {
         //                 // Convert generic type to printable form (e.g. List<Item>)
         //                 string genericPrefix = type.Name.Substring(0, type.Name.IndexOf('`'));
         //                 StringBuilder nameBuilder = new StringBuilder(genericPrefix);
-        // 
+        //
         //                 // Note: building array of generic parameters is done recursively. Each parameter could be any type.
         //                 string[] genericArgs = type.GetGenericArguments().ToList<Type>().ConvertAll<string>(t => GetPrintableTypeName(t)).ToArray<string>();
-        // 
+        //
         //                 nameBuilder.Append("<");
         //                 nameBuilder.Append(string.Join(",", genericArgs));
         //                 nameBuilder.Append(">");
@@ -35419,6 +34212,10 @@ export class EwsUtilities {
         //         "EwsUtilities.ParseEnumValueList",
         //         "T is not an enum type.");
 
+        if (!value) {
+            return;
+        }
+
         var enumValues: string[] = value.split(separators);
 
         for (var enumValue of enumValues) {
@@ -35437,7 +34234,7 @@ export class EwsUtilities {
         // Optional '-' offset
         var offsetStr: string = (timeSpan.TotalSeconds < 0) ? "-" : StringHelper.Empty;
 
-        // The TimeSpan structure does not have a Year or Month 
+        // The TimeSpan structure does not have a Year or Month
         // property, therefore we wouldn't be able to return an xs:duration
         // string from a TimeSpan that included the nY or nM components.
         return StringHelper.Format(
@@ -35919,8 +34716,9 @@ export class ExchangeServiceBase {
         else {
             // Assume an unbiased date/time is in UTC. Convert to UTC otherwise.
             //ref: //fix: hard convert to UTC date as no request contains TZ information.
-            if (value.toLowerCase().indexOf("z") < 0)
+            if (value.toLowerCase().indexOf("z") < 0 && ["+", "-"].indexOf(value.substr(19, 1)) < 0) {
                 value += "Z";
+            }
 
             var dateTime: DateTime = DateTime.Parse(
                 value);
@@ -36076,8 +34874,8 @@ export class ExchangeServiceBase {
             // Apply credentials to the request
             serviceCredentials.PrepareWebRequest(request);
         }
-        else
-            debugger;
+        // else
+        //     debugger;
 
         this.httpResponseHeaders = {};
 
@@ -39803,6 +38601,7 @@ export class ExchangeService extends ExchangeServiceBase {
     private GetAutodiscoverUrl(emailAddress: string, requestedServerVersion: ExchangeVersion, validateRedirectionUrlCallback: AutodiscoverRedirectionUrlValidationCallback): Promise<Uri> {
         var autodiscoverService: AutodiscoverService = new AutodiscoverService(null, null, requestedServerVersion);
         autodiscoverService.Credentials = this.Credentials;
+        autodiscoverService.XHRApi = this.XHRApi;
         autodiscoverService.RedirectionUrlValidationCallback = validateRedirectionUrlCallback,
             autodiscoverService.EnableScpLookup = this.EnableScpLookup
 
@@ -40190,7 +38989,23 @@ export class ExchangeService extends ExchangeServiceBase {
     }
     /* #endregion Utilities */
 
+    //#region Additional Operations not in official EWS Managed Api in the commit
 
+    /**
+     * Get the TimeZoneInfo objects from server
+     * 
+     * @returns {Promise<TimeZoneInfo[]>} 
+     */
+    GetServerTimeZones(): Promise<TimeZoneInfo[]> {
+        let argsLength = arguments.length;
+        let request: GetServerTimeZonesRequest = new GetServerTimeZonesRequest(this);
+
+        return request.Execute().then((response: ServiceResponseCollection<GetServerTimeZonesResponse>) => {
+            return response.Responses[0].TimeZones;
+        });
+    }
+    
+    //#endregion
 }
 
 //module ExchangeService { -> moved to its own file to remove circular dependency.
@@ -41994,7 +40809,7 @@ export abstract class ServiceRequestBase {
             //{
             //    requestObject.SerializeToJson(serviceRequestStream);
             //}
-            debugger;
+            //debugger;
         }
     }
     //EndGetEwsHttpWebResponse(request: IEwsHttpWebRequest, asyncResult: any /*System.IAsyncResult*/): IEwsHttpWebResponse { throw new Error("Could not implemented."); }
@@ -42588,7 +41403,7 @@ export class HangingServiceRequestBase extends ServiceRequestBase {
                         //console.log(meta);
                         break;
                     case "end":
-                        this.IsConnected = false;
+                        this.InternalOnDisconnect(HangingRequestDisconnectReason.Clean, null);
                         break;
                     case "error":
                         this.Disconnect(HangingRequestDisconnectReason.Exception, <any>progress.error);
@@ -43048,19 +41863,28 @@ export class SimpleServiceRequestBase extends ServiceRequestBase {
                 EwsLogging.DebugLog(req, true);
                 if (xhrResponse.status == 200) {
                     EwsLogging.DebugLog(xhrResponse, true);
-                    var ewsXmlReader: EwsServiceXmlReader = new EwsServiceXmlReader(xhrResponse.responseText || xhrResponse.response, this.Service);
-                    //EwsLogging.DebugLog(ewsXmlReader.JsObject, true);
-                    var serviceResponse = this.ReadResponsePrivate(ewsXmlReader.JsObject);
-                    
-                    if (successDelegate)
-                        successDelegate(serviceResponse || xhrResponse.responseText || xhrResponse.response);
+                    try {
+
+                        var ewsXmlReader: EwsServiceXmlReader = new EwsServiceXmlReader(xhrResponse.responseText || xhrResponse.response, this.Service);
+                        //EwsLogging.DebugLog(ewsXmlReader.JsObject, true);
+                        var serviceResponse = this.ReadResponsePrivate(ewsXmlReader.JsObject);
+
+                        if (successDelegate)
+                            successDelegate(serviceResponse || xhrResponse.responseText || xhrResponse.response);
+                    } catch (err) {
+                        if (err instanceof Exception)
+                            errorDelegate(err);
+                        else
+                            errorDelegate(new SoapFaultDetails(err.message));
+                    }
+
                 }
                 else {
                     if (errorDelegate)
-                        errorDelegate(this.ProcessWebException(serviceResponse || xhrResponse.responseText || xhrResponse.response) || serviceResponse);
+                        errorDelegate(this.ProcessWebException(xhrResponse) || xhrResponse);
                 }
             }, (resperr: XMLHttpRequest) => {
-                EwsLogging.Log("Error in calling service, error code:" + resperr.status + "\r\n" + resperr.getAllResponseHeaders());
+                EwsLogging.Log("Error in calling service, error code:" + resperr.status + "\r\n" + ((resperr.getAllResponseHeaders) ? resperr.getAllResponseHeaders() : ""));
                 if (errorDelegate) errorDelegate(this.ProcessWebException(resperr) || resperr);
             });
         });
@@ -43116,7 +41940,7 @@ export class SimpleServiceRequestBase extends ServiceRequestBase {
                 //IEwsHttpWebResponse exceptionResponse = this.Service.HttpWebRequestFactory.CreateExceptionResponse(e);
                 this.Service.ProcessHttpResponseHeaders(TraceFlags.EwsResponseHttpHeaders, response);
             }
-            throw new ServiceRequestException(StringHelper.Format(Strings.ServiceRequestFailed, ex.Message), ex);
+            throw new ServiceRequestException(StringHelper.Format(Strings.ServiceRequestFailed, ex.message /* ex can be generic Error*/), ex);
         }
 
 
@@ -43447,7 +42271,7 @@ export class FindConversationRequest extends SimpleServiceRequestBase {//IJsonSe
 
         // Emit the MailboxScope flag
         // 
-        if (this.MailboxScope) {
+        if (hasValue(this.MailboxScope)) {
             writer.WriteElementValue(XmlNamespace.Messages, XmlElementNames.MailboxScope, MailboxSearchLocation[this.MailboxScope]);
         }
 
@@ -44127,7 +42951,7 @@ export class GetNonIndexableItemDetailsRequest extends SimpleServiceRequestBase 
             writer.WriteElementValue(XmlNamespace.Messages, XmlElementNames.PageItemReference, this.PageItemReference);
         }
 
-        if (this.PageDirection) {
+        if (hasValue(this.PageDirection)) {
             writer.WriteElementValue(XmlNamespace.Messages, XmlElementNames.PageDirection, SearchPageDirection[this.PageDirection]);
         }
 
@@ -45800,7 +44624,7 @@ export class AddDelegateRequest extends DelegateManagementRequestBase<DelegateMa
             delegateUser.ValidateUpdateDelegate();
         }
 
-        if (this.MeetingRequestsDeliveryScope) {
+        if (hasValue(this.MeetingRequestsDeliveryScope)) {
             EwsUtilities.ValidateEnumVersionValue(MeetingRequestsDeliveryScope, this.MeetingRequestsDeliveryScope, this.Service.RequestedServerVersion, "MeetingRequestsDeliveryScope");
         }
     }
@@ -45821,7 +44645,7 @@ export class AddDelegateRequest extends DelegateManagementRequestBase<DelegateMa
 
         writer.WriteEndElement(); // DelegateUsers
 
-        if (this.MeetingRequestsDeliveryScope) {
+        if (hasValue(this.MeetingRequestsDeliveryScope)) {
             writer.WriteElementValue(
                 XmlNamespace.Messages,
                 XmlElementNames.DeliverMeetingRequests,
@@ -46123,7 +44947,7 @@ export class UpdateDelegateRequest extends DelegateManagementRequestBase<Delegat
 
         writer.WriteEndElement(); // DelegateUsers
 
-        if (this.MeetingRequestsDeliveryScope) {
+        if (hasValue(this.MeetingRequestsDeliveryScope)) {
             writer.WriteElementValue(
                 XmlNamespace.Messages,
                 XmlElementNames.DeliverMeetingRequests,
@@ -46174,7 +44998,7 @@ export class MultiResponseServiceRequest<TResponse extends ServiceResponse> exte
                 }
 
             }, (resperr: any) => {
-                debugger;
+                //debugger;
                 if (errorDelegate) {
                     errorDelegate(resperr);
                 }
@@ -46769,9 +45593,9 @@ export class CreateUserConfigurationRequest extends MultiResponseServiceRequest<
  * @internal Represents a DeleteAttachment request.
  * @sealed
  */
-export class DeleteAttachmentRequest extends MultiResponseServiceRequest<DeleteAttachmentResponse> {//IJsonSerializable
+export class DeleteAttachmentRequest extends MultiResponseServiceRequest<DeleteAttachmentResponse> {
 
-    private attachments: Attachment[];
+    private attachments: Attachment[] = [];
 
     /**
      * Gets the attachments.
@@ -47202,7 +46026,7 @@ export class GetAttachmentRequest extends MultiResponseServiceRequest<GetAttachm
         if (this.BodyType || this.AdditionalProperties.length > 0) {
             writer.WriteStartElement(XmlNamespace.Messages, XmlElementNames.AttachmentShape);
 
-            if (this.BodyType) {
+            if (hasValue(this.BodyType)) {
                 writer.WriteElementValue(
                     XmlNamespace.Types,
                     XmlElementNames.BodyType,
@@ -47492,11 +46316,11 @@ export class GetConversationItemsRequest extends MultiResponseServiceRequest<Get
             writer.WriteElementValue(XmlNamespace.Messages, XmlElementNames.MaxItemsToReturn, this.MaxItemsToReturn);
         }
 
-        if (this.SortOrder) {
+        if (hasValue(this.SortOrder)) {
             writer.WriteElementValue(XmlNamespace.Messages, XmlElementNames.SortOrder, ConversationSortOrder[this.SortOrder]);
         }
 
-        if (this.MailboxScope) {
+        if (hasValue(this.MailboxScope)) {
             writer.WriteElementValue(XmlNamespace.Messages, XmlElementNames.MailboxScope, MailboxSearchLocation[this.MailboxScope]);
         }
 
@@ -49182,7 +48006,7 @@ export class UpdateItemRequest extends MultiResponseServiceRequest<UpdateItemRes
             writer.WriteAttributeValue(XmlAttributeNames.MessageDisposition, MessageDisposition[this.MessageDisposition]);
         }
 
-        if (this.SuppressReadReceipts) {
+        if (hasValue(this.SuppressReadReceipts)) {
             writer.WriteAttributeValue(XmlAttributeNames.SuppressReadReceipts, true);
         }
 
@@ -49372,7 +48196,7 @@ export class CreateFolderRequest extends CreateRequest<Folder, ServiceResponse> 
     }
     CreateServiceResponse(service: ExchangeService, responseIndex: number): ServiceResponse { 
         //return new CreateFolderResponse(<Folder>EwsUtilities.GetEnumeratedObjectAt(this.Folders, responseIndex));
-        if (this.Folders.length >= responseIndex) { throw new Error(Strings.IEnumerableDoesNotContainThatManyObject); }
+        if (this.Folders.length <= responseIndex) { throw new Error(Strings.IEnumerableDoesNotContainThatManyObject); }
         return new CreateFolderResponse(this.Folders[responseIndex]);
     }
     GetMinimumRequiredServerVersion(): ExchangeVersion { return ExchangeVersion.Exchange2007_SP1; }
@@ -50716,7 +49540,7 @@ export class ArchiveItemResponse extends ServiceResponse {
     }
     ReadElementsFromJson(responseObject: any, service: ExchangeService): any { throw new Error("ArchiveItemResponse.ts - ReadElementsFromJson : Not implemented."); }
     ReadElementsFromXmlJsObject(responseObject: any, service: ExchangeService): void {
-        debugger;
+        //debugger;
         var items: Item[] = EwsServiceJsonReader.ReadServiceObjectsCollectionFromJson<Item>(
             responseObject,
             service,
@@ -50754,6 +49578,7 @@ export class AttendeeAvailability extends ServiceResponse {
                     break;
                 case XmlElementNames.CalendarEventArray:
                     var calendarEventArray = jsObject[key];
+                    if (!calendarEventArray) break;
                     var calendarEvents:any[] = calendarEventArray[XmlElementNames.CalendarEvent];
                     if (!Array.isArray(calendarEvents)) {
                         calendarEvents = [calendarEvents]
@@ -52746,7 +51571,7 @@ export class UpdateFolderResponse extends ServiceResponse {
         }
     }
     ReadElementsFromXmlJsObject(responseObject: any, service: ExchangeService): void {
-        debugger;//todo: check if this is needed. 
+        //debugger;//todo: check if this is needed. 
         //throw new Error("UpdateFolderResponse.ts - ReadElementsFromXmlJsObject : Not implemented."); 
     }
 }
@@ -52943,12 +51768,46 @@ export class GetDelegateResponse extends DelegateManagementResponse {
         }
     }
 }
-export class ServiceResponseCollection<TResponse extends ServiceResponse> { // IEnumerable<TResponse> where TResponse : ServiceResponse
-    get Count(): number { return this.responses.length; }
-    get Responses(): TResponse[] { return this.responses; }
-    get OverallResult(): ServiceResult { return this.overallResult; }
-    private responses: TResponse[] = [];// System.Collections.Generic.List<T>;
+
+/**
+ * Represents a strogly typed list of service responses.
+ * @sealed
+ * @typeparam   {TResponse}     The type of response stored in the list.
+ */
+export class ServiceResponseCollection<TResponse extends ServiceResponse> implements IEnumerable<TResponse> {
+
+    private responses: TResponse[] = [];
+
     private overallResult: ServiceResult = ServiceResult.Success;
+
+    /**
+     * Gets the total number of responses in the list.
+     */
+    get Count(): number {
+        return this.responses.length;
+    }
+
+    get Responses(): TResponse[] { return this.responses; }
+
+    /**
+     * Gets a value indicating the overall result of the request that generated this response collection.
+     * If all of the responses have their Result property set to Success, OverallResult returns Success.
+     * If at least one response has its Result property set to Warning and all other responses have their Result property set to Success, OverallResult returns Warning. 
+     * If at least one response has a its Result set to Error, OverallResult returns Error.
+     */
+    get OverallResult(): ServiceResult { return this.overallResult; }
+
+    /**
+     * @internal Initializes a new instance of the **ServiceResponseCollection<TResponse>** class.
+     */
+    constructor() {
+    }
+
+    /**
+     * @internal Adds specified response.
+     *
+     * @param   {TResponse}   response   The response.
+     */    
     Add(response: TResponse): void {
         EwsLogging.Assert(
             response != null,
@@ -52961,8 +51820,23 @@ export class ServiceResponseCollection<TResponse extends ServiceResponse> { // I
 
         this.responses.push(response);
     }
-    GetEnumerator(): any { throw new Error("ServiceResponseCollection.ts - GetEnumerator : Not implemented."); }
-    __thisIndexer(index: number) {
+
+    /**
+     * Gets an enumerator that iterates through the elements of the collection.
+     *
+     * @return  {TResponse[]}      An IEnumerator for the collection.
+     */    
+    GetEnumerator(): TResponse[] {
+        return this.responses;
+    }
+
+    /**
+     * Gets the response at the specified index.
+     *
+     * @param   {number}        index   The zero-based index of the response to get.
+     * @return  {TResponse}     The response at the specified index.
+     */
+    __thisIndexer(index: number): TResponse {
         if (index < 0 || index >= this.Count) {
             throw new ArgumentOutOfRangeException("index", Strings.IndexIsOutOfRange);
         }
@@ -55641,7 +54515,7 @@ export class Item extends ServiceObject {
         // Starting E14SP2, attachment will be sent along with CreateItem requests. 
         // if the attachment used to require the Timezone header, CreateItem request should do so too.
         //
-        debugger;//filtering of specific type needed.
+        //debugger;//todo: filtering of specific type needed.
         if (!isUpdateOperation &&
             (this.Service.RequestedServerVersion >= ExchangeVersion.Exchange2010_SP2)) {
             for (var itemAttachment of ArrayHelper.OfType<Attachment, ItemAttachment>(this.Attachments.Items, (a) => a instanceof TypeContainer.ItemAttachment))//.OfType<ItemAttachment>()) //info: cannot check instanceof to avoid circular dependency in js. TypeContainer is workaround
@@ -57834,7 +56708,7 @@ export class EmailMessage extends Item {
             // Regardless of whether item is dirty or not, if it has unprocessed
             // attachment changes, process them now.
 
-            debugger; //todo: check - check for attachment save() promise. 
+            //debugger; //todo: check - check for attachment save() promise. 
             return Promise.resolve(
                 // Validate and save attachments before sending.
                 this.HasUnprocessedAttachmentChanges() ? this.Attachments.ValidateAndSave() : void 0)
@@ -59293,7 +58167,7 @@ export class Task extends Item {
     /** ##internal ~~ workaround GitHub #52 */
     Update(conflictResolutionMode: ConflictResolutionMode): Promise<any>;
     Update(conflictResolutionMode: ConflictResolutionMode): Promise<Task> {
-        return <any>this.InternalUpdate(
+        return <Promise<Task>>this.InternalUpdate(
             null /* parentFolder */,
             conflictResolutionMode,
             MessageDisposition.SaveOnly,
@@ -60107,8 +58981,8 @@ export abstract class ResponseObject<TMessage extends EmailMessage> extends Serv
                 destinationFolderId = destinationFolderIdOrName;
             }
         }
-        return <any>this.InternalCreate(destinationFolderId, MessageDisposition.SaveOnly).then((result) => {
-            return result[0];
+        return this.InternalCreate(destinationFolderId, MessageDisposition.SaveOnly).then((result) => {
+            return <TMessage>result[0];
         });
     }
 
@@ -68020,8 +66894,8 @@ export class AutodiscoverRequest {
         var writer = new EwsServiceXmlWriter(this.service);
         this.WriteSoapRequest(this.url, writer);
 
-        if (!this.service || !this.Service.Credentials && (!this.Service.Credentials.UserName || this.service.Credentials.Password))
-            throw new Error("missing credential");
+        if (!this.service)
+            throw new Error("Missing Service");
 
         //var cred = "Basic " + btoa(this.Service.Credentials.UserName + ":" + this.Service.Credentials.Password);
         var cc = writer.GetXML();
@@ -68036,7 +66910,11 @@ export class AutodiscoverRequest {
             //    var m = x;
             //}
         };
-        this.service.Credentials.PrepareWebRequest(xhrOptions);
+
+        //If not set, credentials might come from custom XHRApi
+        if (this.service.Credentials)
+            this.service.Credentials.PrepareWebRequest(xhrOptions);
+
         return new Promise((successDelegate, errorDelegate) => {
             EwsLogging.DebugLog("sending ews request");
             EwsLogging.DebugLog(xhrOptions, true);
@@ -68431,7 +67309,7 @@ export class GetDomainSettingsRequest extends AutodiscoverRequest {
 
         writer.WriteEndElement(); //RequestedSettings
 
-        if (this.requestedVersion) {
+        if (hasValue(this.requestedVersion)) {
             writer.WriteElementValue(XmlNamespace.Autodiscover,
                 XmlElementNames.RequestedVersion,
                 this.requestedVersion);
@@ -69118,7 +67996,7 @@ export class GetUserSettingsResponse extends AutodiscoverResponse {
                 value = AlternateMailboxCollection.LoadFromJson(obj[XmlElementNames.AlternateMailboxes]);
                 break;
             case XmlElementNames.DocumentSharingLocationCollectionSetting://DocumentSharingLocations:
-                debugger;
+                //debugger;
                 EwsLogging.Log("------------DocumentSharingLocationCollection needs test and fix ----------------", true);
                 EwsLogging.Log(obj, true, true);
                 value = DocumentSharingLocationCollection.LoadFromJson(obj);
@@ -69750,18 +68628,18 @@ export class AutodiscoverService extends ExchangeServiceBase {
 
         var host = hosts[currentHostIndex];
         // var isScpHost:bool = currentHostIndex < scpHostCount;
-        var autodiscoverUrlOut:IOutParam<Uri> = { outValue:null };
+        var autodiscoverUrlOut: IOutParam<Uri> = { outValue: null };
         return this.TryGetAutodiscoverEndpointUrl(host, autodiscoverUrlOut)
             .then<TGetSettingsResponseCollection>((value) => {
                 if (value) {
+                    // If we got this far, the response was successful, set Url.
+                    this.Url = autodiscoverUrlOut.outValue;
+
                     return getSettingsMethod(
                         identities,
                         settings,
                         requestedVersion,
                         autodiscoverUrlRef, this).then((response) => {
-                            // If we got this far, the response was successful, set Url.
-                            this.Url = autodiscoverUrlRef.getValue();
-
                             // Not external if Autodiscover endpoint found via SCP returned the settings.
                             //if (isScpHost) {
                             //    this.IsExternal = false;
@@ -69873,7 +68751,7 @@ export class AutodiscoverService extends ExchangeServiceBase {
         var request = new GetDomainSettingsRequest(thisref, autodiscoverUrlRef.getValue());
         request.Settings = settings;
         request.Domains = domains;
-        return request.Execute().then((response) => {
+        return <any>request.Execute().then((response) => {
             // Did we get redirected?
             if (response.ErrorCode == AutodiscoverErrorCode.RedirectUrl && response.RedirectionUrl != null) {
                 this.TraceMessage(
@@ -69883,7 +68761,7 @@ export class AutodiscoverService extends ExchangeServiceBase {
                 // this url need be brought back to the caller.
                 //
                 autodiscoverUrlRef.setValue(response.RedirectionUrl);
-                return <any>this.InternalGetDomainSettings(domains, settings, requestedVersion, autodiscoverUrlRef, thisref, currentHop);
+                return this.InternalGetDomainSettings(domains, settings, requestedVersion, autodiscoverUrlRef, thisref, currentHop);
             }
             else {
                 return response;
@@ -69976,7 +68854,7 @@ export class AutodiscoverService extends ExchangeServiceBase {
 
         request.SmtpAddresses = smtpAddresses;
         request.Settings = settings;
-        return request.Execute().then((response) => {
+        return <any>request.Execute().then((response) => {
             // Did we get redirected?
             if (response.ErrorCode == AutodiscoverErrorCode.RedirectUrl && response.RedirectionUrl != null) {
                 this.TraceMessage(
@@ -69989,7 +68867,7 @@ export class AutodiscoverService extends ExchangeServiceBase {
                 return this.InternalGetUserSettings(smtpAddresses, settings, requestedVersion, autodiscoverUrlRef, thisref, currentHop);
             }
             else {
-                return <any>response;
+                return response;
             }
         }, (err) => {
 
@@ -70090,7 +68968,7 @@ export class AutodiscoverService extends ExchangeServiceBase {
             }
         }, (err) => { throw err; });
     }
-    
+
     private TryGetEnabledEndpointsForHost(host: IRefParam<string>, endpoints: IOutParam<AutodiscoverEndpoints>, currentHop: number = 0): Promise<boolean> {
 
         this.TraceMessage(
@@ -70945,8 +69823,8 @@ export class Exception {//} extends Error { //ref: can not extend from Error. Ty
         this.InnerException = innerException;
         this.message = message || "";
 
-        if (typeof Error['captureStackTrace'] === 'function') {
-            (<any>Error).captureStackTrace(this, this.constructor);
+        if (typeof Error.captureStackTrace === 'function') {
+            Error.captureStackTrace(this, this.constructor);
         } else {
             this.stack = (new Error(message)).stack;
         }
@@ -74380,7 +73258,7 @@ export class ConversationAction {//IJsonSerializable
                         XmlElementNames.IsRead,
                         this.IsRead);
 
-                    if (this.SuppressReadReceipts) {
+                    if (hasValue(this.SuppressReadReceipts)) {
                         writer.WriteElementValue(
                             XmlNamespace.Types,
                             XmlElementNames.SuppressReadReceipts,
@@ -79698,7 +78576,7 @@ export class ConversationIndexedItemView extends PagedView {
 	InternalValidate(request: ServiceRequestBase): void {
 		super.InternalValidate(request);
 
-		if (this.Traversal) {
+		if (hasValue(this.Traversal)) {
 			EwsUtilities.ValidateEnumVersionValue(ConversationQueryTraversal, this.traversal, request.Service.RequestedServerVersion, "ConversationQueryTraversal");
 		}
 
@@ -79723,7 +78601,7 @@ export class ConversationIndexedItemView extends PagedView {
      * @param   {EwsServiceXmlWriter}   writer   The writer.
      */
 	WriteAttributesToXml(writer: EwsServiceXmlWriter): void {
-		if (this.Traversal) {
+		if (hasValue(this.Traversal)) {
 			writer.WriteAttributeValue(XmlAttributeNames.Traversal, ConversationQueryTraversal[this.Traversal]);
 		}
 
@@ -80329,7 +79207,7 @@ export class OrderByCollection implements IEnumerable<PropertyDefinitionSortDire
      */
     Contains(propertyDefinition: PropertyDefinitionBase): boolean {
         this.propDefSortOrderPairList.forEach((pair, index) => {
-            debugger;// check if equality works or need to use any property
+            //debugger;// check if equality works or need to use any property
             if (pair.key === propertyDefinition)
                 return true;
         });

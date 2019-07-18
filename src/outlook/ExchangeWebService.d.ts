@@ -19,7 +19,7 @@ declare namespace EwsJS {
     }
     function ConfigureForOutlook(): void;
     //export * from 'ews-js-api-browser';
-
+    
     interface IndexerWithStringKey<TValue> {
         [index: string]: TValue;
     }
@@ -118,7 +118,7 @@ declare namespace EwsJS {
         CompareTo(toDate: DateTime): number;
         Difference(toDate: DateTime): TimeSpan;
         Format(formatting: string): string;
-        private static getKindfromMoment(m);
+        private static getKindfromMoment;
         static Parse(value: any, kind?: DateTimeKind): DateTime;
         ToISOString(): string;
         toString(): string;
@@ -194,7 +194,7 @@ declare namespace EwsJS {
         AdjustToUniversal = 16,
         AssumeLocal = 32,
         AssumeUniversal = 64,
-        RoundtripKind = 128,
+        RoundtripKind = 128
     }
     var unitOfTime: {
         "year": "s" | "m" | "h" | "d" | "M" | "y" | "year" | "years" | "month" | "months" | "week" | "weeks" | "w" | "day" | "days" | "hour" | "hours" | "minute" | "minutes" | "second" | "seconds" | "millisecond" | "milliseconds" | "ms";
@@ -243,9 +243,19 @@ declare namespace EwsJS {
          */
         function ToString(enumObj: any, checkFlag: number, includeZero?: boolean): string;
     }
+    /**
+     * explicitly checks if the obj is null or undefined
+     * @param obj input to be checked
+     */
+    function isNullOrUndefined(obj: any): boolean;
+    /**
+     * explicitly checks if the obj has value and it is NOT null or undefined
+     * @param obj input to be checked
+     */
+    function hasValue(obj: any): boolean;
     module ArrayHelper {
         function AddRange<T>(array: Array<T>, items: Array<T>, uniqueOnly?: boolean): void;
-        function RemoveEntry<T>(array: Array<T>, entry: T, comparer?: (T) => boolean): boolean;
+        function RemoveEntry<T>(array: Array<T>, entry: T, comparer?: (T: any) => boolean): boolean;
         function Find<T>(array: Array<T>, comparer: (item: T) => boolean): T;
         function IndexOf<T>(array: Array<T>, comparer: (item: T) => boolean): number;
         function OfType<T, U>(array: Array<T>, comparer: (item: T) => boolean): U[];
@@ -267,8 +277,8 @@ declare namespace EwsJS {
     class xml2JsObject {
         typeIncludedNS: string[];
         parseXMLNode(xmlNode: Node, soapMode?: boolean, xmlnsRoot?: any): any;
-        private addXMLNS(xmlnsObj, xmlnsName, xmlnsValue, xmlnsAttrName?);
-        private containsXMLNS(obj, xmlnsName, xmlnsAttrName?);
+        private addXMLNS;
+        private containsXMLNS;
     }
     interface ParsedUrl {
         scheme: string;
@@ -296,6 +306,7 @@ declare namespace EwsJS {
     }
     /** Guid proxy class */
     class Guid {
+        static ParseStrict: boolean;
         static Empty: Guid;
         private guid;
         constructor();
@@ -1473,23 +1484,23 @@ declare namespace EwsJS {
         readonly SupportsDaylightSavingTime: boolean;
         static readonly Local: TimeZoneInfo;
         static readonly Utc: TimeZoneInfo;
-        private constructor(id, baseUtcOffset, displayName, standardDisplayName, daylightDisplayName, adjustmentRules, disableDaylightSavingTime);
+        private constructor();
         static ConvertTime(dateTime: DateTime, sourceTimeZone: TimeZoneInfo, destinationTimeZone: TimeZoneInfo): DateTime;
-        private static CreateLocal();
+        private static CreateLocal;
         static CreateCustomTimeZone(id: string, baseUtcOffset: TimeSpan, displayName: string, standardDisplayName: string): TimeZoneInfo;
         static CreateCustomTimeZone(id: string, baseUtcOffset: TimeSpan, displayName: string, standardDisplayName: string, daylightDisplayName: string, adjustmentRules: TimeZoneInfo.AdjustmentRule[]): TimeZoneInfo;
         static CreateCustomTimeZone(id: string, baseUtcOffset: TimeSpan, displayName: string, standardDisplayName: string, daylightDisplayName: string, adjustmentRules: TimeZoneInfo.AdjustmentRule[], disableDaylightSavingTime: boolean): TimeZoneInfo;
         static AddTimeZoneMapping(source: string, mappedTz: string): void;
         static FindSystemTimeZoneById(zoneName: string): TimeZoneInfo;
         static readonly ListWindowsTimeZones: () => string[];
-        private static GetCorrespondingKind(timeZone);
+        private static GetCorrespondingKind;
         static GuessLocalTimeZone(): string;
         HasSameRules(other: TimeZoneInfo): boolean;
     }
     module TimeZoneInfo {
         enum TimeZoneInfoOptions {
             None = 1,
-            NoThrowOnInvalidTime = 2,
+            NoThrowOnInvalidTime = 2
         }
         class AdjustmentRule {
             private readonly _dateStart;
@@ -1504,10 +1515,10 @@ declare namespace EwsJS {
             readonly DaylightDelta: TimeSpan;
             readonly DaylightTransitionStart: TransitionTime;
             readonly DaylightTransitionEnd: TransitionTime;
-            private constructor(dateStart, dateEnd, daylightDelta, daylightTransitionStart, daylightTransitionEnd, baseUtcOffsetDelta, noDaylightTransitions);
+            private constructor();
             Equals(other: AdjustmentRule): boolean;
             static CreateAdjustmentRule(dateStart: DateTime, dateEnd: DateTime, daylightDelta: TimeSpan, daylightTransitionStart: TransitionTime, daylightTransitionEnd: TransitionTime): AdjustmentRule;
-            private static ValidateAdjustmentRule(dateStart, dateEnd, daylightDelta, daylightTransitionStart, daylightTransitionEnd, noDaylightTransitions);
+            private static ValidateAdjustmentRule;
         }
         class TransitionTime {
             private readonly _timeOfDay;
@@ -1524,10 +1535,10 @@ declare namespace EwsJS {
             readonly IsFixedDateRule: boolean;
             Equals(other: TransitionTime): boolean;
             GetHashCode(): number;
-            private constructor(timeOfDay, month, week, day, dayOfWeek, isFixedDateRule);
+            private constructor();
             static CreateFixedDateRule(timeOfDay: DateTime, month: number, day: number): TransitionTime;
             static CreateFloatingDateRule(timeOfDay: DateTime, month: number, week: number, dayOfWeek: DayOfWeek): TransitionTime;
-            private static ValidateTransitionTime(timeOfDay, month, week, day, dayOfWeek);
+            private static ValidateTransitionTime;
         }
     }
     interface ICalendarActionProvider {
@@ -1631,7 +1642,7 @@ declare namespace EwsJS {
         /**
          * Only the current occurrence of the recurring task will be deleted.
          */
-        SpecifiedOccurrenceOnly = 1,
+        SpecifiedOccurrenceOnly = 1
     }
     /**
      * Defines the type of aggregation to perform.
@@ -1644,7 +1655,7 @@ declare namespace EwsJS {
         /**
          * The minimum value is calculated.
          */
-        Maximum = 1,
+        Maximum = 1
     }
     /**
      * Defines the type of an appointment.
@@ -1665,7 +1676,7 @@ declare namespace EwsJS {
         /**
          * The appointment is the recurring master of a series.
          */
-        RecurringMaster = 3,
+        RecurringMaster = 3
     }
     /**
      * Defines the error codes that can be returned by the Autodiscover service.
@@ -1714,7 +1725,7 @@ declare namespace EwsJS {
         /**
          * Internal server error.
          */
-        InternalServerError = 10,
+        InternalServerError = 10
     }
     /**
      * Defines the type of data that can be requested via GetUserAvailability.
@@ -1731,7 +1742,7 @@ declare namespace EwsJS {
         /**
          * Return both free/busy data and suggestions.
          */
-        FreeBusyAndSuggestions = 2,
+        FreeBusyAndSuggestions = 2
     }
     /**
      * Defines base property sets that are used as the base for custom property sets.
@@ -1744,7 +1755,7 @@ declare namespace EwsJS {
         /**
          * Includes all the first class properties of items and folders.
          */
-        FirstClassProperties = 1,
+        FirstClassProperties = 1
     }
     /**
      * Defines the type of body of an item.
@@ -1757,7 +1768,7 @@ declare namespace EwsJS {
         /**
          * The body is in plain text.
          */
-        Text = 1,
+        Text = 1
     }
     /**
      * Defines the type of change of a synchronization event.
@@ -1778,7 +1789,7 @@ declare namespace EwsJS {
         /**
          * An item's IsRead flag was changed.
          */
-        ReadFlagChange = 3,
+        ReadFlagChange = 3
     }
     /**
      * Defines the type of ClientAccessTokenType
@@ -1795,7 +1806,7 @@ declare namespace EwsJS {
         /**
          * ScopedToken
          */
-        ScopedToken = 2,
+        ScopedToken = 2
     }
     /**
      * Defines the type of ClientExtensionProvidedTo.
@@ -1808,7 +1819,7 @@ declare namespace EwsJS {
         /**
          * SpecificUsers
          */
-        SpecificUsers = 1,
+        SpecificUsers = 1
     }
     /**
      * Defines the way values are compared in search filters.
@@ -1829,7 +1840,7 @@ declare namespace EwsJS {
         /**
          * The comparison ignores casing and spacing characters.
          */
-        IgnoreCaseAndNonSpacingCharacters = 3,
+        IgnoreCaseAndNonSpacingCharacters = 3
     }
     /**
      * Defines how conflict resolutions are handled in update operations.
@@ -1846,7 +1857,7 @@ declare namespace EwsJS {
         /**
          * Local property changes overwrite server-side changes.
          */
-        AlwaysOverwrite = 2,
+        AlwaysOverwrite = 2
     }
     /**
      * Defines the conflict types that can be returned in meeting time suggestions.
@@ -1867,7 +1878,7 @@ declare namespace EwsJS {
         /**
          * There is a conflict with an unresolvable attendee or an attendee that is not a user, group, or contact.
          */
-        UnknownAttendeeConflict = 3,
+        UnknownAttendeeConflict = 3
     }
     /**
      * Defines the type of Id of a ConnectingId object.
@@ -1884,7 +1895,7 @@ declare namespace EwsJS {
         /**
          * The Id is an SMTP address.
          */
-        SmtpAddress = 2,
+        SmtpAddress = 2
     }
     /**
      * The ConnectionFailureCause enumeration
@@ -1909,7 +1920,7 @@ declare namespace EwsJS {
         /**
          * Other
          */
-        Other = 4,
+        Other = 4
     }
     /**
      * The consent states enumeration
@@ -1926,7 +1937,7 @@ declare namespace EwsJS {
         /**
          * User has requested to enable the extension.
          */
-        Consented = 2,
+        Consented = 2
     }
     /**
      * Defines the source of a contact or group.
@@ -1939,7 +1950,7 @@ declare namespace EwsJS {
         /**
          * The contact or group is stored in Exchange.
          */
-        Store = 1,
+        Store = 1
     }
     /**
      * Defines the containment mode for Contains search filters.
@@ -1964,7 +1975,7 @@ declare namespace EwsJS {
         /**
          * The comparison is between an exact phrase in the string and the constant.
          */
-        ExactPhrase = 4,
+        ExactPhrase = 4
     }
     /**
      * Defines the flag status of a Conversation.
@@ -1981,7 +1992,7 @@ declare namespace EwsJS {
         /**
          * Complete
          */
-        Complete = 2,
+        Complete = 2
     }
     /**
      * Defines the folder traversal depth in queries.
@@ -1994,7 +2005,7 @@ declare namespace EwsJS {
         /**
          * Deep traversal
          */
-        Deep = 1,
+        Deep = 1
     }
     module ConversationQueryTraversal {
         /**RequiredServerVersionAttribute */
@@ -2019,7 +2030,7 @@ declare namespace EwsJS {
         /**
          * Chronological order, descending.
          */
-        DateOrderDescending = 3,
+        DateOrderDescending = 3
     }
     /**
      * Defines the precision for returned DateTime values
@@ -2036,7 +2047,7 @@ declare namespace EwsJS {
         /**
          * Milliseconds
          */
-        Milliseconds = 2,
+        Milliseconds = 2
     }
     /**
      * Specifies the day of the week.
@@ -2084,7 +2095,7 @@ declare namespace EwsJS {
         /**
          * Any weekend day (Saturday or Sunday)
          */
-        WeekendDay = 9,
+        WeekendDay = 9
     }
     /**
      * Defines the index of a week day within a month.
@@ -2109,7 +2120,7 @@ declare namespace EwsJS {
         /**
          * The last specific day of the week in the month. For example, the last Tuesday of the month.
          */
-        Last = 4,
+        Last = 4
     }
     /**
      * Enum for the day of the week.
@@ -2143,7 +2154,7 @@ declare namespace EwsJS {
         /**
          * Saturday
          */
-        Saturday = 6,
+        Saturday = 6
     }
     /**
      * Defines the default sets of extended properties.
@@ -2184,7 +2195,7 @@ declare namespace EwsJS {
         /**
          * The Task extended property set.
          */
-        Task = 8,
+        Task = 8
     }
     /**
      *
@@ -2209,7 +2220,7 @@ declare namespace EwsJS {
         /**
          * The delegate has Custom permissions.
          */
-        Custom = 4,
+        Custom = 4
     }
     /**
      * Represents deletion modes.
@@ -2226,13 +2237,13 @@ declare namespace EwsJS {
         /**
          * The item or folder will be moved to the mailbox' Deleted Items folder.
          */
-        MoveToDeletedItems = 2,
+        MoveToDeletedItems = 2
     }
     enum DictionaryKeyType {
         EmailAddressKey = 0,
         ImAddressKey = 1,
         PhoneNumberKey = 2,
-        PhysicalAddressKey = 3,
+        PhysicalAddressKey = 3
     }
     /**
      * Disable reason type
@@ -2253,7 +2264,7 @@ declare namespace EwsJS {
         /**
          * Extension is being disabled from MOWA due to performance reasons
          */
-        MobileClientPerformance = 3,
+        MobileClientPerformance = 3
     }
     /**
      * Domain setting names.
@@ -2266,7 +2277,7 @@ declare namespace EwsJS {
         /**
          * The version of the Exchange server hosting the URL of the Exchange Web Services.
          */
-        ExternalEwsVersion = 1,
+        ExternalEwsVersion = 1
     }
     /**
      * Defines the effective user rights associated with an item or folder.
@@ -2305,7 +2316,7 @@ declare namespace EwsJS {
         /**
          * The user can view private items.
          */
-        ViewPrivateItems = 64,
+        ViewPrivateItems = 64
     }
     /**
      * Defines the folder type of a retention policy tag.
@@ -2387,7 +2398,7 @@ declare namespace EwsJS {
         /**
          * Non IPM Subtree root.
          */
-        NonIpmRoot = 19,
+        NonIpmRoot = 19
     }
     /**
      * Defines e-mail address entries for a contact.
@@ -2404,7 +2415,7 @@ declare namespace EwsJS {
         /**
          * The third e-mail address.
          */
-        EmailAddress3 = 2,
+        EmailAddress3 = 2
     }
     /**
      * Defines the email position of an extracted entity.
@@ -2425,7 +2436,7 @@ declare namespace EwsJS {
         /**
          * The position is in the signature.
          */
-        Signature = 3,
+        Signature = 3
     }
     /**custom created to simplify creation of above Enum(s) to ExchangeVersion mapping in EwsUtil, There is no c# like Attribute typesystem and reflection available */
     enum EnumToSchemaMappingHelper {
@@ -2437,7 +2448,7 @@ declare namespace EwsJS {
         EventType = 4,
         MeetingRequestsDeliveryScope = 5,
         ViewFilter = 6,
-        MailboxType = 7,
+        MailboxType = 7
     }
     /**
      * Defines the types of event that can occur in a folder.
@@ -2474,7 +2485,7 @@ declare namespace EwsJS {
         /**
          * This event indicates that free/busy has changed. This is only supported in 2010 SP1 or later
          */
-        FreeBusyChanged = 7,
+        FreeBusyChanged = 7
     }
     module EventType {
         /**RequiredServerVersionAttribute */
@@ -2525,7 +2536,7 @@ declare namespace EwsJS {
          */
         V2015_10_05 = 8,
         /** internal tracking of any version not updated in **ews-javascript-api** */
-        Exchange_Version_Not_Updated = 15000,
+        Exchange_Version_Not_Updated = 15000
     }
     /**
      * Defines the type of ExtensionInstallScope.
@@ -2546,7 +2557,7 @@ declare namespace EwsJS {
         /**
          * Exchange Default
          */
-        Default = 3,
+        Default = 3
     }
     /**
      * Defines the type of ExtensionType.
@@ -2563,7 +2574,7 @@ declare namespace EwsJS {
         /**
          * MarketPlace
          */
-        MarketPlace = 2,
+        MarketPlace = 2
     }
     /**
      * Defines the way the FileAs property of a contact is automatically formatted.
@@ -2640,7 +2651,7 @@ declare namespace EwsJS {
         /**
          * Empty (Exchange 2010 or later).
          */
-        Empty = 17,
+        Empty = 17
     }
     module FileAsMapping {
         /**RequiredServerVersionAttribute */
@@ -2697,7 +2708,7 @@ declare namespace EwsJS {
         /**
          * The recipient is requested to review the message.
          */
-        Review = 10,
+        Review = 10
     }
     /**
      * Defines permission levels for calendar folders.
@@ -2750,7 +2761,7 @@ declare namespace EwsJS {
         /**
          * The Custom level.
          */
-        Custom = 11,
+        Custom = 11
     }
     /**
      * Defines a user's read access permission on items in a non-calendar folder.
@@ -2771,7 +2782,7 @@ declare namespace EwsJS {
         /**
          * The user has access to the full details of items.
          */
-        FullDetails = 3,
+        FullDetails = 3
     }
     /**
      * Defines the scope of FindFolders operations.
@@ -2788,7 +2799,7 @@ declare namespace EwsJS {
         /**
          * Only soft deleted folders are retrieved.
          */
-        SoftDeleted = 2,
+        SoftDeleted = 2
     }
     /**
      * Defines the type of free/busy information returned by a GetUserAvailability operation.
@@ -2823,7 +2834,7 @@ declare namespace EwsJS {
          * If only merged free/busy information is available, for example if the mailbox exists on a computer running Exchange 2003, MergedOnly will be returned.
          * Otherwise, FreeBusyMerged or DetailedMerged will be returned.
          */
-        DetailedMerged = 5,
+        DetailedMerged = 5
     }
     /**
      * Defines the response types from a GetUserPhoto request
@@ -2840,7 +2851,7 @@ declare namespace EwsJS {
         /**
          * The photo or user was not found on the server
          */
-        PhotoOrUserNotFound = 2,
+        PhotoOrUserNotFound = 2
     }
     /**
      * Defines the hold action.
@@ -2857,7 +2868,7 @@ declare namespace EwsJS {
         /**
          * Release the hold
          */
-        Remove = 2,
+        Remove = 2
     }
     /**
      * Defines the hold status.
@@ -2882,7 +2893,7 @@ declare namespace EwsJS {
         /**
          * The hold operation failed
          */
-        Failed = 4,
+        Failed = 4
     }
     /**
      * The values indicate the types of item icons to display.
@@ -3031,7 +3042,7 @@ declare namespace EwsJS {
         /**
          * Icon task delegated
          */
-        TaskDelegated = 35,
+        TaskDelegated = 35
     }
     /**
      * Defines supported Id formats in ConvertId operations.
@@ -3060,7 +3071,7 @@ declare namespace EwsJS {
         /**
          * The Outlook Web Access Id format.
          */
-        OwaId = 5,
+        OwaId = 5
     }
     /**
      * Defines Instant Messaging address entries for a contact.
@@ -3077,7 +3088,7 @@ declare namespace EwsJS {
         /**
          * The third Instant Messaging address.
          */
-        ImAddress3 = 2,
+        ImAddress3 = 2
     }
     /**
      * Defines the importance of an item.
@@ -3094,7 +3105,7 @@ declare namespace EwsJS {
         /**
          * High importance.
          */
-        High = 2,
+        High = 2
     }
     /**
      * Defines the flag status of an Item.
@@ -3111,7 +3122,7 @@ declare namespace EwsJS {
         /**
          * Complete.
          */
-        Complete = 2,
+        Complete = 2
     }
     /**
      * Item index error
@@ -3144,7 +3155,7 @@ declare namespace EwsJS {
         /**
          * Data is truncated
          */
-        MarsWriterTruncation = 6,
+        MarsWriterTruncation = 6
     }
     /**
      * Defines the scope of FindItems operations.
@@ -3161,7 +3172,7 @@ declare namespace EwsJS {
         /**
          * Only associated items are retrieved (Exchange 2010 or later).
          */
-        Associated = 2,
+        Associated = 2
     }
     module ItemTraversal {
         /**RequiredServerVersionAttribute */
@@ -3178,7 +3189,7 @@ declare namespace EwsJS {
         ArrayClose = 7,
         Colon = 8,
         Comma = 9,
-        EndOfFile = 10,
+        EndOfFile = 10
     }
     /**
      * Defines the legacy free/busy status associated with an appointment.
@@ -3207,7 +3218,7 @@ declare namespace EwsJS {
         /**
          * No free/busy status is associated with the appointment.
          */
-        NoData = 5,
+        NoData = 5
     }
     /**
      * Online Meeting Lobby Bypass options.
@@ -3220,7 +3231,7 @@ declare namespace EwsJS {
         /**
          * Enabled for gateway participants.
          */
-        EnabledForGatewayParticipants = 1,
+        EnabledForGatewayParticipants = 1
     }
     /**
      * Source of resolution.
@@ -3249,7 +3260,7 @@ declare namespace EwsJS {
         /**
          * Sourced from a resource (such as a conference room)
          */
-        Resource = 5,
+        Resource = 5
     }
     /**
      * Defines a logical operator as used by search filter collections.
@@ -3262,7 +3273,7 @@ declare namespace EwsJS {
         /**
          * The OR operator.
          */
-        Or = 1,
+        Or = 1
     }
     /**
      * Defines the location for mailbox search.
@@ -3279,7 +3290,7 @@ declare namespace EwsJS {
         /**
          * Both Primary and Archive (Exchange 2013 or later).
          */
-        All = 2,
+        All = 2
     }
     module MailboxSearchLocation {
         /**RequiredServerVersionAttribute */
@@ -3320,7 +3331,7 @@ declare namespace EwsJS {
         /**
          * The EmailAddress represents a GroupMailbox (Exchange 2015/2016 or later).
          */
-        GroupMailbox = 7,
+        GroupMailbox = 7
     }
     module MailboxType {
         /**RequiredServerVersionAttribute */
@@ -3441,7 +3452,7 @@ declare namespace EwsJS {
         /**
          * The property is of type StringArray.
          */
-        StringArray = 26,
+        StringArray = 26
     }
     /** shim to store type of data in MapiTypeConverterMapEntry */
     enum MapiTypeConverterTypeSystem {
@@ -3450,7 +3461,7 @@ declare namespace EwsJS {
         number = 2,
         DateTime = 3,
         guid = 4,
-        byteArray = 5,
+        byteArray = 5
     }
     /**
      * The attendee is the organizer of the meeting.
@@ -3475,7 +3486,7 @@ declare namespace EwsJS {
         /**
          * The attendee is a resource.
          */
-        Resource = 4,
+        Resource = 4
     }
     /**
      * Defines how meeting requests are sent to delegates.
@@ -3496,7 +3507,7 @@ declare namespace EwsJS {
         /**
          * Meeting requests are not sent to delegates.  This value is supported only for Exchange 2010 SP1 or later server versions.
          */
-        NoForward = 3,
+        NoForward = 3
     }
     module MeetingRequestsDeliveryScope {
         /**RequiredServerVersionAttribute */
@@ -3533,7 +3544,7 @@ declare namespace EwsJS {
         /**
          * The meeting update was forwarded to a delegate, and this copy is informational.
          */
-        PrincipalWantsCopy = 6,
+        PrincipalWantsCopy = 6
     }
     /**
      * Defines the types of response given to a meeting request.
@@ -3562,7 +3573,7 @@ declare namespace EwsJS {
         /**
          * No response was received for the meeting.
          */
-        NoResponseReceived = 5,
+        NoResponseReceived = 5
     }
     /**
      * Defines the status of group members.
@@ -3579,7 +3590,7 @@ declare namespace EwsJS {
         /**
          * The member is demoted.
          */
-        Demoted = 2,
+        Demoted = 2
     }
     /**
      * Defines how messages are disposed of in CreateItem and UpdateItem operations.
@@ -3596,7 +3607,7 @@ declare namespace EwsJS {
         /**
          * Messages are sent but no copy is saved.
          */
-        SendOnly = 2,
+        SendOnly = 2
     }
     /**
      * Defines months of the year.
@@ -3649,7 +3660,7 @@ declare namespace EwsJS {
         /**
          * December.
          */
-        December = 12,
+        December = 12
     }
     /**
      * Defines the offset's base point in a paged view.
@@ -3662,7 +3673,7 @@ declare namespace EwsJS {
         /**
          * The offset is from the end of the view.
          */
-        End = 1,
+        End = 1
     }
     /**
      * Online Meeting Access Level options.
@@ -3683,7 +3694,7 @@ declare namespace EwsJS {
         /**
          * Everyone.
          */
-        Everyone = 3,
+        Everyone = 3
     }
     /**
      * Defines the external audience of an Out of Office notification.
@@ -3700,7 +3711,7 @@ declare namespace EwsJS {
         /**
          * All recipients should receive Out of Office notifications.
          */
-        All = 2,
+        All = 2
     }
     /**
      * Defines a user's Out of Office Assistant status.
@@ -3717,7 +3728,7 @@ declare namespace EwsJS {
         /**
          * The assistant is scheduled.
          */
-        Scheduled = 2,
+        Scheduled = 2
     }
     /**
      * Defines the scope of a user's permission on a folders.
@@ -3734,7 +3745,7 @@ declare namespace EwsJS {
         /**
          * The user has the associated permission on all items.
          */
-        All = 2,
+        All = 2
     }
     /**
      * The PhoneCallState enumeration
@@ -3771,7 +3782,7 @@ declare namespace EwsJS {
         /**
          * Forwarding.
          */
-        Forwarding = 7,
+        Forwarding = 7
     }
     /**
      * Defines phone number entries for a contact.
@@ -3852,7 +3863,7 @@ declare namespace EwsJS {
         /**
          * The TTY/TTD phone number.
          */
-        TtyTddPhone = 18,
+        TtyTddPhone = 18
     }
     /**
      * Defines a physical address index.
@@ -3873,7 +3884,7 @@ declare namespace EwsJS {
         /**
          * The alternate address.
          */
-        Other = 3,
+        Other = 3
     }
     /**
      * Defines physical address entries for a contact.
@@ -3890,7 +3901,7 @@ declare namespace EwsJS {
         /**
          * An alternate address.
          */
-        Other = 2,
+        Other = 2
     }
     /**
      * Online Meeting Presenters options.
@@ -3907,7 +3918,7 @@ declare namespace EwsJS {
         /**
          * Everyone.
          */
-        Everyone = 2,
+        Everyone = 2
     }
     /**
      * Preview item base shape
@@ -3920,7 +3931,7 @@ declare namespace EwsJS {
         /**
          * Compact (only a set of core properties)
          */
-        Compact = 1,
+        Compact = 1
     }
     /**
      * The rendering method.
@@ -3933,7 +3944,7 @@ declare namespace EwsJS {
         /**
          * Javascript Object Notation
          */
-        JSON = 1,
+        JSON = 1
     }
     /**
      * Defines the location where a ResolveName operation searches for contacts.
@@ -3954,7 +3965,7 @@ declare namespace EwsJS {
         /**
          * The name is resolved against the Contacts folder and then against the Global Address List if no match was found.
          */
-        ContactsThenDirectory = 3,
+        ContactsThenDirectory = 3
     }
     /**
      * Defines the response actions that can be taken on an item.
@@ -4005,7 +4016,7 @@ declare namespace EwsJS {
         /**
          * A reply to the item can be posted.
          */
-        PostReply = 512,
+        PostReply = 512
     }
     /**
      * Defines the type of a ResponseMessage object.
@@ -4022,7 +4033,7 @@ declare namespace EwsJS {
         /**
          * The ResponseMessage is a forward.
          */
-        Forward = 2,
+        Forward = 2
     }
     /**
      * Defines the action of a retention policy tag.
@@ -4055,7 +4066,7 @@ declare namespace EwsJS {
         /**
          * Expired items will be moved to the archive.
          */
-        MoveToArchive = 6,
+        MoveToArchive = 6
     }
     /**
      * Defines the retention type.
@@ -4068,7 +4079,7 @@ declare namespace EwsJS {
         /**
          * Archive retention.
          */
-        Archive = 1,
+        Archive = 1
     }
     /**
      * Defines the error codes identifying why a rule failed validation.
@@ -4171,7 +4182,7 @@ declare namespace EwsJS {
         /**
          * The rule is not supported.
          */
-        UnsupportedRule = 23,
+        UnsupportedRule = 23
     }
     /**
      * Defines the available properties of a rule.
@@ -4540,7 +4551,7 @@ declare namespace EwsJS {
         /**
          * The Exceptions property of a rule, contains all exceptions of the rule.
          */
-        Exceptions = 90,
+        Exceptions = 90
     }
     module RuleProperty {
         /**EwsEnumAttribute */
@@ -4559,7 +4570,7 @@ declare namespace EwsJS {
         /**
          * Items belonging to the root folder and its sub-folders are retrieved.
          */
-        Deep = 1,
+        Deep = 1
     }
     /**
      * Defines the page direction for mailbox search.
@@ -4572,7 +4583,7 @@ declare namespace EwsJS {
         /**
          * Navigate to previous page.
          */
-        Previous = 1,
+        Previous = 1
     }
     /**
      * Defines the type of search result.
@@ -4585,7 +4596,7 @@ declare namespace EwsJS {
         /**
          * Preview only.
          */
-        PreviewOnly = 1,
+        PreviewOnly = 1
     }
     /**
      * Defines how meeting cancellations should be sent to attendees when an appointment is deleted.
@@ -4602,7 +4613,7 @@ declare namespace EwsJS {
         /**
          * Meeting cancellations are sent to all attendees and a copy of the cancellation message is saved in the organizer's Sent Items folder.
          */
-        SendToAllAndSaveCopy = 2,
+        SendToAllAndSaveCopy = 2
     }
     /**
      * Defines if/how meeting invitations are sent.
@@ -4619,7 +4630,7 @@ declare namespace EwsJS {
         /**
          * Meeting invitations are sent to all attendees and a copy of the invitation message is saved.
          */
-        SendToAllAndSaveCopy = 2,
+        SendToAllAndSaveCopy = 2
     }
     /**
      * Defines if/how meeting invitations or cancellations should be sent to attendees when an appointment is updated.
@@ -4644,7 +4655,7 @@ declare namespace EwsJS {
         /**
          * Meeting invitations/cancellations are sent only to attendees that have been added or modified and a copy is saved in the organizer's Sent Items folder.
          */
-        SendToChangedAndSaveCopy = 4,
+        SendToChangedAndSaveCopy = 4
     }
     /**
      * The values indicate the types of item icons to display.
@@ -4661,7 +4672,7 @@ declare namespace EwsJS {
         /**
          * VotingOption
          */
-        VotingOption = 2,
+        VotingOption = 2
     }
     /**
      * Defines the sensitivity of an item.
@@ -4682,7 +4693,7 @@ declare namespace EwsJS {
         /**
          * The item is confidential.
          */
-        Confidential = 3,
+        Confidential = 3
     }
     /**
      * Defines the error codes that can be returned by the Exchange Web Services.
@@ -6625,7 +6636,7 @@ declare namespace EwsJS {
         /**
          * Error indicating that recipients number for a consumer mailbox has exceeded the limit defined by WASCL
          */
-        ErrorExceededMaxRecipientLimitShowTierUpgrade = 473,
+        ErrorExceededMaxRecipientLimitShowTierUpgrade = 473
     }
     /**
      * Defines the type of a service object.
@@ -6646,7 +6657,7 @@ declare namespace EwsJS {
         /**
          * Data represents a persona
          */
-        Persona = 3,
+        Persona = 3
     }
     /**
      * Defines the result of a call to an EWS method.
@@ -6664,7 +6675,7 @@ declare namespace EwsJS {
         /**
          * The call triggered at least one error
          */
-        Error = 2,
+        Error = 2
     }
     /**
      * Defines the type of SetClientExtensionActionId.
@@ -6681,7 +6692,7 @@ declare namespace EwsJS {
         /**
          * Configure
          */
-        Configure = 2,
+        Configure = 2
     }
     /**
      * Defines a sort direction
@@ -6694,7 +6705,7 @@ declare namespace EwsJS {
         /**
          * The sort is performed in descending order.
          */
-        Descending = 1,
+        Descending = 1
     }
     /**
      * Defines a standard delegate user.
@@ -6707,7 +6718,7 @@ declare namespace EwsJS {
         /**
          * The Anonymous delegate user, used to define delegate permissions for unauthenticated users.
          */
-        Anonymous = 1,
+        Anonymous = 1
     }
     /**
      * Defines the quality of an availability suggestion.
@@ -6728,7 +6739,7 @@ declare namespace EwsJS {
         /**
          * The suggestion is poor.
          */
-        Poor = 3,
+        Poor = 3
     }
     /**
      * Determines items to be included in a SyncFolderItems response.
@@ -6741,7 +6752,7 @@ declare namespace EwsJS {
         /**
          * Include normal and associated items in the response.
          */
-        NormalAndAssociatedItems = 1,
+        NormalAndAssociatedItems = 1
     }
     /**
      * This maps to the bogus TaskDelegationState in the EWS schema.
@@ -6763,7 +6774,7 @@ declare namespace EwsJS {
         /**
          * The task was delegated but the delegation was declined.
          */
-        Declined = 3,
+        Declined = 3
     }
     /**
      * Defines the modes of a Task.
@@ -6792,7 +6803,7 @@ declare namespace EwsJS {
         /**
          * The task is self delegated
          */
-        SelfDelegated = 5,
+        SelfDelegated = 5
     }
     /**
      * Defines the execution status of a task.
@@ -6817,7 +6828,7 @@ declare namespace EwsJS {
         /**
          * The execution of the task is deferred.
          */
-        Deferred = 4,
+        Deferred = 4
     }
     /**
      * TeamMailbox lifecycle state
@@ -6838,7 +6849,7 @@ declare namespace EwsJS {
         /**
          * PendingDelete
          */
-        PendingDelete = 3,
+        PendingDelete = 3
     }
     module TeamMailboxLifecycleState {
         /**EwsEnumAttribute */
@@ -6903,7 +6914,7 @@ declare namespace EwsJS {
         /**
          * All trace types enabled.
          */
-        All = 9223372036854776000,
+        All = 9223372036854776000
     }
     /**
      * Identifies the user configuration dictionary key and value types.
@@ -6948,7 +6959,7 @@ declare namespace EwsJS {
         /**
          * Byte array type
          */
-        ByteArray = 9,
+        ByteArray = 9
     }
     /**
      * Identifies the user configuration properties to retrieve.
@@ -6975,7 +6986,7 @@ declare namespace EwsJS {
         /**
          * Retrieve all properties.
          */
-        All = 15,
+        All = 15
     }
     /**
      * User settings that can be requested using GetUserSettings.
@@ -7382,7 +7393,7 @@ declare namespace EwsJS {
         /**
          * External OutlookService URL
          */
-        ExternalOutlookServiceUrl = 99,
+        ExternalOutlookServiceUrl = 99
     }
     /**
      * Defines the view filter for queries.
@@ -7431,7 +7442,7 @@ declare namespace EwsJS {
         /**
          * Delete suggestions
          */
-        SuggestionsDelete = 10,
+        SuggestionsDelete = 10
     }
     module ViewFilter {
         /**RequiredServerVersionAttribute */
@@ -7617,7 +7628,7 @@ declare namespace EwsJS {
         /**
          * Favorites folder
          */
-        Favorites = 43,
+        Favorites = 43
     }
     module WellKnownFolderName {
         /**RequiredServerVersionAttribute */
@@ -9174,7 +9185,8 @@ declare namespace EwsJS {
         constructor();
         Changed(): void;
         ClearChangeLog(): void;
-        InternalLoadFromXmlJsObject(jsObject: any, service: ExchangeService, readAction: (jsonProperty: any, service: ExchangeService) => void): void;
+        InternalLoadFromXmlJsObject(jsObject: any, service: ExchangeService, //xmlNamespace: XmlNamespace, xmlElementName: string,
+            readAction: (jsonProperty: any, service: ExchangeService) => void): void;
         InternalValidate(): void;
         LoadFromXmlJsObject(jsObject: any, service: ExchangeService): void;
         SetFieldValue<T>(field: IRefParam<T>, value: T): void;
@@ -9278,7 +9290,7 @@ declare namespace EwsJS {
          * @param   {EwsServiceXmlWriter}   writer           The writer.
          * @param   {string}                xmlElementName   Name of the XML element.
          */
-        private SerializeOofReply(oofReply, writer, xmlElementName);
+        private SerializeOofReply;
         /**
          * Validates this instance.
          */
@@ -9600,7 +9612,7 @@ declare namespace EwsJS {
          *
          * @param   {ComplexProperty}   complexProperty   The complex property.
          */
-        private DaysOfTheWeekChanged(complexProperty);
+        private DaysOfTheWeekChanged;
     }
     /**
      * Represents a regeneration pattern, as used with recurring tasks, where each occurrence happens a specified number of weeks after the previous one is completed.
@@ -9705,6 +9717,11 @@ declare namespace EwsJS {
          * @param   {number}    dayOfMonth   The day of the month each occurrence happens.
          */
         constructor(startDate: DateTime, month: Month, dayOfMonth: number);
+    }
+    module TimeZoneTransition {
+        var AbsoluteDateTransition: any;
+        var AbsoluteDayOfMonthTransition: any;
+        var RelativeDayOfMonthTransition: any;
     }
     module TimeZoneTransitionGroup {
     }
@@ -9967,7 +9984,7 @@ declare namespace EwsJS {
          * @param   {string}            xmlElementName   Name of the XML element.
          * @return  {Item}              Item.
          */
-        private GetObjectInstance(service, xmlElementName);
+        private GetObjectInstance;
     }
     /**
      *
@@ -10061,7 +10078,7 @@ declare namespace EwsJS {
          * @param   {EwsServiceXmlWriter}   writer           The writer.
          * @param   {string}                xmlElementName   The element name.
          */
-        private WritePermissionToXml(writer, xmlElementName);
+        private WritePermissionToXml;
     }
     /**
      * Represents a delegate user.
@@ -10183,7 +10200,7 @@ declare namespace EwsJS {
          *
          * @param   {ComplexProperty}   complexProperty   ComplexProperty object.
          */
-        private PersonaPostalAddress_OnChange(complexProperty);
+        private PersonaPostalAddress_OnChange;
     }
     /**
      * Represents an EntityExtractionResult object.
@@ -10227,7 +10244,6 @@ declare namespace EwsJS {
         Equals(obj: any): boolean;
         GetHashCode(): number;
         GetStringValue(): string;
-        LoadFromJson(jsonProperty: any, service: ExchangeService): any;
         LoadFromXmlJsObject(jsonProperty: any, service: ExchangeService): void;
     }
     /**
@@ -10352,43 +10368,139 @@ declare namespace EwsJS {
         /**
          * Determines the permission level of this folder permission based on its individual settings, and sets the PermissionLevel property accordingly.
          */
-        private AdjustPermissionLevel();
+        private AdjustPermissionLevel;
         /**
          * Copies the values of the individual permissions of the specified folder permission to this folder permissions.
          *
          * @param   {FolderPermission}   permission   The folder permission to copy the values from.
          */
-        private AssignIndividualPermissions(permission);
+        private AssignIndividualPermissions;
         /**
          * Create a copy of this FolderPermission instance.
          *
          * @return  {FolderPermission}      Clone of this instance.
          */
-        private Clone();
+        private Clone;
         /**
          * Determines whether the specified folder permission is the same as this one. The comparison does not take UserId and PermissionLevel into consideration.
          *
          * @param   {FolderPermission}  permission   The folder permission to compare with this folder permission.
          * @return  {boolean}           True is the specified folder permission is equal to this one, false otherwise.
          */
-        private IsEqualTo(permission);
+        private IsEqualTo;
         /**
          * Property was changed.
          *
          * @param   {ComplexProperty}   complexProperty   The complex property.
          */
-        private PropertyChanged(complexProperty);
+        private PropertyChanged;
     }
+    /**
+     * Represents a group member
+     * [RequiredServerVersion(ExchangeVersion.Exchange2010)] ** needs implementation
+     */
     class GroupMember extends ComplexProperty {
-        Key: string;
-        AddressInformation: EmailAddress;
-        Status: MemberStatus;
+        /**
+         * AddressInformation field.
+         */
         private addressInformation;
+        /**
+         * Status field.
+         */
         private status;
+        /**
+         * Member key field.
+         */
         private key;
-        AddressInformationChanged(complexProperty: ComplexProperty): any;
-        InternalToJson(service: ExchangeService): any;
-        LoadFromJson(jsonProperty: JsonObject, service: ExchangeService): any;
+        /**
+         * ets the key of the member.
+         */
+        readonly Key: string;
+        /**
+         * Gets the address information of the member.
+         */
+        /**
+        * @internal Sets the address information of the member.
+        */
+        AddressInformation: EmailAddress;
+        /**
+         * Gets the status of the member.
+         */
+        readonly Status: MemberStatus;
+        /**
+         * Initializes a new instance of the **GroupMember** class.
+         *
+         */
+        constructor();
+        /**
+         * Initializes a new instance of the **GroupMember** class.
+         *
+         * @param   {string}   smtpAddress   The SMTP address of the member.
+         */
+        constructor(smtpAddress: string);
+        /**
+         * Initializes a new instance of the **GroupMember** class.
+         *
+         * @param   {ItemId}   contactGroupId   The Id of the contact group to link the member to.
+         */
+        constructor(contactGroupId: ItemId);
+        /**
+         * Initializes a new instance of the **GroupMember** class.
+         *
+         * @param   {EmailAddress}   addressInformation   The e-mail address of the member.
+         */
+        constructor(addressInformation: EmailAddress);
+        /**
+         * Initializes a new instance of the **GroupMember** class.
+         *
+         * @param   {string}   smtpAddress   The SMTP address of the member.
+         * @param   {MailboxType}   mailboxType   The mailbox type of the member.
+         */
+        constructor(smtpAddress: string, mailboxType: MailboxType);
+        /**
+         * Initializes a new instance of the **GroupMember** class.
+         *
+         * @param   {string}   name          The name of the one-off member.
+         * @param   {string}   smtpAddress   The SMTP address of the one-off member.
+         */
+        constructor(name: string, smtpAddress: string);
+        /**
+         * Initializes a new instance of the **GroupMember** class.
+         *
+         * @param   {ItemId}   contactId       The Id of the contact member.
+         * @param   {string}   addressToLink   The Id of the contact to link the member to.
+         */
+        constructor(contactId: ItemId, addressToLink: string);
+        /**
+         * Initializes a new instance of the **GroupMember** class from a Contact instance indexed by the specified key.
+         *
+         * @param   {Contact}           contact           The contact to link to.
+         * @param   {EmailAddressKey}   emailAddressKey   The contact's e-mail address to link to.
+         */
+        constructor(contact: Contact, emailAddressKey: EmailAddressKey);
+        /**
+         * Initializes a new instance of the **GroupMember** class.
+         *
+         * @param   {string}   address       The address of the member.
+         * @param   {string}   routingType   The routing type of the address.
+         * @param   {MailboxType}   mailboxType   The mailbox type of the member.
+         */
+        constructor(address: string, routingType: string, mailboxType: MailboxType);
+        /**
+         * Initializes a new instance of the **GroupMember** class.
+         *
+         * @param   {string}   name          The name of the one-off member.
+         * @param   {string}   address       The address of the one-off member.
+         * @param   {string}   routingType   The routing type of the address.
+         */
+        constructor(name: string, address: string, routingType: string);
+        private constructor_str_str_mbType;
+        /**
+         * AddressInformation instance is changed.
+         *
+         * @param   {}   complexProperty   Changed property.
+         */
+        private AddressInformationChanged;
     }
     /**
      * Represents an AQS highlight term.
@@ -10933,14 +11045,14 @@ declare namespace EwsJS {
          * @param   {EmailAddressCollection}   emailCollection   Recipient list in EmailAddressCollection type.
          * @return  {MobilePhone[]}		A MobilePhone collection object containing all SMS recipient in MobilePhone type.
          */
-        private static ConvertSMSRecipientsFromEmailAddressCollectionToMobilePhoneCollection(emailCollection);
+        private static ConvertSMSRecipientsFromEmailAddressCollectionToMobilePhoneCollection;
         /**
          * Convert the SMS recipient list from MobilePhone collection type to EmailAddressCollection type.
          *
          * @param   {MobilePhone[]}   recipientCollection   Recipient list in a MobilePhone collection type.
          * @return  {EmailAddressCollection}		An EmailAddressCollection object containing recipients with "MOBILE" address type.
          */
-        private static ConvertSMSRecipientsFromMobilePhoneCollectionToEmailAddressCollection(recipientCollection);
+        private static ConvertSMSRecipientsFromMobilePhoneCollectionToEmailAddressCollection;
     }
     /**
      * Represents a collection of rules.
@@ -11547,7 +11659,7 @@ declare namespace EwsJS {
         /**
          * required before initializing new UserConfigurationDictionary
          */
-        static _dictionaryKeyPicker: (key) => string;
+        static _dictionaryKeyPicker: (key: any) => string;
         private dictionary;
         private isDirty;
         /**
@@ -11587,7 +11699,7 @@ declare namespace EwsJS {
          * @param   {ExchangeService}                           service   The service.
          * @return  {any}                                       Dictionary object.
          */
-        private ConstructObject(type, value, service);
+        private ConstructObject;
         /**
          * Determines whether the user configuration dictionary contains an element with the specified key.
          *
@@ -11602,7 +11714,7 @@ declare namespace EwsJS {
          * @param   {ExchangeService}   service      The service.
          * @return  {any}               the dictionary object
          */
-        private GetDictionaryObject(jsonObject, service);
+        private GetDictionaryObject;
         GetEnumerator(): Dictionary<any, any>;
         /**
          * Gets the type of the object.
@@ -11610,14 +11722,14 @@ declare namespace EwsJS {
          * @param   {string}   type   The type.
          * @return  {UserConfigurationDictionaryObjectType}     UserConfigurationDictionaryObjectType for the string value
          */
-        private static GetObjectType(type);
+        private static GetObjectType;
         /**
          * Gets the object value.
          *
          * @param   {any[]}   valueArray   The value array.
          * @return  {string[]}  string array from object Array
          */
-        private GetObjectValue(valueArray);
+        private GetObjectValue;
         /**
          * Gets the type code.
          *
@@ -11626,7 +11738,7 @@ declare namespace EwsJS {
          * @param   {IRefParam<UserConfigurationDictionaryObjectType>}      dictionaryObjectType   Type of the dictionary object.
          * @param   {IRefParam<string>}                                     valueAsString          The value as string.
          */
-        private static GetTypeCode(service, dictionaryObject, dictionaryObjectType, valueAsString);
+        private static GetTypeCode;
         /**
          * Removes the element with the specified key from the user configuration dictionary.
          *
@@ -11647,40 +11759,40 @@ declare namespace EwsJS {
          *
          * @param   {Array<any>}   dictionaryObjectAsArray   Object to validate
          */
-        private ValidateArrayObject(dictionaryObjectAsArray);
+        private ValidateArrayObject;
         /**
          * Validates the specified key and value.
          *
          * @param   {any}   key     The dictionary entry key.
          * @param   {any}   value   The dictionary entry value.
          */
-        private ValidateEntry(key, value);
+        private ValidateEntry;
         /**
          * Validates the dictionary object (key or entry value).
          *
          * @param   {any}   dictionaryObject   Object to validate.
          */
-        private ValidateObject(dictionaryObject);
+        private ValidateObject;
         /**
          * Validates the dictionary object type.
          *
          * @param   {any}   type   Type to validate.
          */
-        private ValidateObjectType(dictionaryObject);
+        private ValidateObjectType;
         /**
          * Writes a dictionary entry type to Xml.
          *
          * @param   {EwsServiceXmlWriter}                       writer                 The writer.
          * @param   {UserConfigurationDictionaryObjectType}     dictionaryObjectType   Type to write.
          */
-        private WriteEntryTypeToXml(writer, dictionaryObjectType);
+        private WriteEntryTypeToXml;
         /**
          * Writes a dictionary entry value to Xml.
          *
          * @param   {EwsServiceXmlWriter}   writer   The writer.
          * @param   {string}                value    Value to write.
          */
-        private WriteEntryValueToXml(writer, value);
+        private WriteEntryValueToXml;
         /**
          * Writes a dictionary object (key or value) to Xml.
          *
@@ -11688,14 +11800,14 @@ declare namespace EwsJS {
          * @param   {string}                xmlElementName     The Xml element name.
          * @param   {any}                   dictionaryObject   The object to write.
          */
-        private WriteObjectToXml(writer, xmlElementName, dictionaryObject);
+        private WriteObjectToXml;
         /**
          * Writes a dictionary Object's value to Xml.
          *
          * @param   {EwsServiceXmlWriter}   writer             The writer.
          * @param   {any}                   dictionaryObject   The dictionary object to write.
          */
-        private WriteObjectValueToXml(writer, dictionaryObject);
+        private WriteObjectValueToXml;
     }
     /**
      * Represents the Id of a user.
@@ -11835,7 +11947,7 @@ declare namespace EwsJS {
          *
          * @param   {any}   jsonObject   The json object.
          */
-        private LoadAttachmentIdFromXMLJsObject(jsonObject);
+        private LoadAttachmentIdFromXMLJsObject;
     }
     /**
      * Represents a file attachment.
@@ -11877,7 +11989,7 @@ declare namespace EwsJS {
          *
          * @param   {ServiceObject}   serviceObject   The service object that triggered the OnChange event.
          */
-        private ItemChanged(serviceObject);
+        private ItemChanged;
         /**
          * Loads this attachment.
          *
@@ -11902,14 +12014,21 @@ declare namespace EwsJS {
          */
         Item: TItem;
     }
+    /**
+     * Represents an entry of a DictionaryProperty object.
+     * @remarks All descendants of DictionaryEntryProperty must implement a parameterless constructor. That constructor does not have to be public.
+     * @typeparam   {TKey}     The type of the key used by this dictionary.
+     * [EditorBrowsable(EditorBrowsableState.Never)]
+     */
     class DictionaryEntryProperty<TKey> extends ComplexProperty {
+        /** ews-javascript-api specific workaround for inheritance */
         protected keyType: any;
         private key;
+        /**
+         * Gets or sets the key.
+         * @value   The key.
+         */
         Key: TKey;
-        constructor();
-        constructor(key: TKey);
-        WriteDeleteUpdateToJson(service: ExchangeService, ewsObject: ServiceObject, updates: any[]): boolean;
-        WriteSetUpdateToJson(service: ExchangeService, ewsObject: ServiceObject, propertyDefinition: PropertyDefinition, updates: any[]): boolean;
     }
     class EmailAddressEntry extends DictionaryEntryProperty<EmailAddressKey> {
         private emailAddress;
@@ -11917,8 +12036,6 @@ declare namespace EwsJS {
         constructor();
         constructor(key: EmailAddressKey, emailAddress: EmailAddress);
         EmailAddressChanged(complexProperty: ComplexProperty): void;
-        InternalToJson(service: ExchangeService): any;
-        LoadFromJson(jsonProperty: any, service: ExchangeService): any;
         LoadFromXmlJsObject(jsonProperty: any, service: ExchangeService): void;
     }
     class ImAddressEntry extends DictionaryEntryProperty<ImAddressKey> {
@@ -11926,8 +12043,6 @@ declare namespace EwsJS {
         ImAddress: string;
         constructor();
         constructor(key: ImAddressKey, imAddress: string);
-        InternalToJson(service: ExchangeService): any;
-        LoadFromJson(jsonProperty: any, service: ExchangeService): any;
         LoadFromXmlJsObject(jsonProperty: any, service: ExchangeService): void;
     }
     class PhoneNumberEntry extends DictionaryEntryProperty<PhoneNumberKey> {
@@ -11935,8 +12050,6 @@ declare namespace EwsJS {
         PhoneNumber: string;
         constructor();
         constructor(key: PhoneNumberKey, imAddress: string);
-        InternalToJson(service: ExchangeService): any;
-        LoadFromJson(jsonProperty: JsonObject, service: ExchangeService): any;
         LoadFromXmlJsObject(jsonProperty: any, service: ExchangeService): void;
     }
     /**
@@ -11951,7 +12064,7 @@ declare namespace EwsJS {
         PostalCode: string;
         constructor();
         ClearChangeLog(): void;
-        private GetFieldUri(xmlElementName);
+        private GetFieldUri;
         InternalToJson(service: ExchangeService): any;
         InternalWriteDeleteUpdateToJson(ewsObject: ServiceObject, propertyName: string, updates: any[]): void;
         LoadFromJson(jsonProperty: any, service: ExchangeService): void;
@@ -11992,7 +12105,7 @@ declare namespace EwsJS {
          *
          * @param   {}   complexProperty   The complex property.
          */
-        private EntryChanged(complexProperty);
+        private EntryChanged;
         /**
          * Remove entry based on key.
          *
@@ -12005,7 +12118,7 @@ declare namespace EwsJS {
          * @param   {EwsServiceXmlWriter}   writer   The writer.
          * @param   {TKey}                  key      The key.
          */
-        private WriteUriToXml(writer, key);
+        private WriteUriToXml;
     }
     class EmailAddressDictionary extends DictionaryProperty<EmailAddressKey, EmailAddressEntry> {
         constructor();
@@ -12604,18 +12717,61 @@ declare namespace EwsJS {
          */
         constructor(rule: Rule);
     }
-    class ServiceId extends ComplexProperty {
-        readonly IsValid: boolean;
-        protected IsValidProxy(): boolean;
+    /**
+     * Represents the Id of an Exchange object.
+     *
+     * @abstract
+     * @class ServiceId
+     * @extends {ComplexProperty}
+     */
+    abstract class ServiceId extends ComplexProperty {
+        /**
+         *Gets the unique Id of the Exchange object.
+         *
+         * @type {string}
+         */
         UniqueId: string;
+        /**
+         *Gets the change key associated with the Exchange object. The change key represents the the version of the associated item or folder.
+         *
+         * @type {string}
+         */
         ChangeKey: string;
+        /**
+         * True if this instance is valid, false otherthise.
+         *
+         * @value   *true* if this instance is valid; otherwise, *false*.
+         */
+        readonly IsValid: boolean;
+        /**
+         * Initializes a new instance of the **ServiceId** class.
+         */
         constructor();
+        /**
+         * Initializes a new instance of the **ServiceId** class.
+         *
+         * @param   {string}   uniqueId   The unique id.
+         */
         constructor(uniqueId: string);
-        Assign(source: ServiceId): void;
+        /**
+         * Determines whether the specified *ServiceId* is equal to the current *ServiceId*.
+         * We do not consider the ChangeKey for ServiceId.Equals.
+         *
+         * @param   {any}       obj   The  to compare with the current .
+         * @return  {boolean}   true if the specified  is equal to the current ; otherwise, false.
+         */
         Equals(obj: any): boolean;
-        GetXmlElementName(): string;
-        LoadFromXmlJsObject(jsObject: any, service: ExchangeService): void;
+        /**
+         * Determines whether two ServiceId instances are equal (including ChangeKeys)
+         *
+         * @param   {ServiceId}   other   The ServiceId to compare with the current ServiceId.
+         */
         SameIdAndChangeKey(other: ServiceId): boolean;
+        /**
+         * Returns a *String* that represents the current *ServiceId*.
+         *
+         * @return  {string}      A *String* that represents the current *ServiceId*.
+         */
         ToString(): string;
     }
     /**
@@ -12640,22 +12796,86 @@ declare namespace EwsJS {
         ToString(): string;
         toString(): string;
     }
+    /**
+     * Represents the Id of a folder.
+     *
+     * @class FolderId
+     * @extends {ServiceId}
+     */
     class FolderId extends ServiceId {
-        readonly FolderName: WellKnownFolderName;
-        readonly Mailbox: Mailbox;
-        readonly IsValid: boolean;
         private folderName;
         private mailbox;
-        constructor(folderName?: WellKnownFolderName, mailbox?: Mailbox);
-        Equals(obj: any): boolean;
-        GetXmlElementName(): string;
-        ToString(): string;
-        Validate(version?: ExchangeVersion): void;
-    }
-    class ItemId extends ServiceId {
-        constructor();
+        /**
+         * Gets the name of the folder associated with the folder Id. Name and Id are mutually exclusive; if one is set, the other is null.
+         *
+         * @readonly
+         * @type {WellKnownFolderName}
+         */
+        readonly FolderName: WellKnownFolderName;
+        /**
+         * Gets the mailbox of the folder. Mailbox is only set when FolderName is set.
+         *
+         * @readonly
+         * @type {Mailbox}
+         */
+        readonly Mailbox: Mailbox;
+        /**
+         * True if this instance is valid, false otherthise.
+         *
+         * @value   *true* if this instance is valid; otherwise, *false*.
+         */
+        readonly IsValid: boolean;
+        /**
+         * Initializes a new instance of the **FolderId** class. Use this constructor to link this FolderId to an existing folder that you have the unique Id of.
+        *
+        * @param   {String} uniqueId The unique Id used to initialize the FolderId.
+        */
         constructor(uniqueId: string);
-        GetXmlElementName(): string;
+        /**
+         * Initializes a new instance of the **FolderId** class. Use this constructor to link this FolderId to a well known folder (e.g. Inbox, Calendar or Contacts).
+        *
+        * @param   {WellKnownFolderName}    folderName  The folder name used to initialize the FolderId.
+        */
+        constructor(folderName: WellKnownFolderName);
+        /**
+         * Initializes a new instance of the **FolderId** class. Use this constructor to link this FolderId to a well known folder (e.g. Inbox, Calendar or Contacts) in a specific mailbox.
+        *
+        * @param   {WellKnownFolderName}    folderName   The folder name used to initialize the FolderId.
+        * @param   {Mailbox}                mailbox      The mailbox used to initialize the FolderId.
+        */
+        constructor(folderName: WellKnownFolderName, mailbox: Mailbox);
+        /**
+         * Determines whether the specified *FolderId* is equal to the current *FolderId*.
+         * We do not consider the ChangeKey for FolderId.Equals.
+         *
+         * @param   {any}       obj   The  to compare with the current .
+         * @return  {boolean}   true if the specified  is equal to the current ; otherwise, false.
+         */
+        Equals(obj: any): boolean;
+        /**
+         * Returns a *String* that represents the current *FolderId*.
+         *
+         * @return  {string}      A *String* that represents the current *FolderId*.
+         */
+        ToString(): string;
+    }
+    /**
+     * Represents the Id of an Exchange item.
+     *
+     * @class ItemId
+     * @extends {ServiceId}
+     */
+    class ItemId extends ServiceId {
+        /**
+         * Initializes a new instance of the **ItemId**.
+         */
+        constructor();
+        /**
+         * Initializes a new instance of the **ItemId**.
+         *
+         * @param   {String} uniqueId   The unique Id used to initialize the ItemId
+         */
+        constructor(uniqueId: string);
     }
     class AppointmentOccurrenceId extends ItemId {
         private occurrenceIndex;
@@ -12740,24 +12960,7 @@ declare namespace EwsJS {
          * @param   {string}	fileName   The name of the file representing the content of the attachment.
          * @return  {FileAttachment} 		A FileAttachment instance.
          */
-        private AddFileAttachmentXXXXX(fileName);
-        /**
-         * Adds a file attachment to the collection.
-         *
-         * @param   {string}   name       The display name of the new attachment.
-         * @param   {string}   fileName   The name of the file representing the content of the attachment.
-         * @return  {FileAttachment}      A FileAttachment instance.
-         */
-        private AddFileAttachmentXXXXX(name, fileName);
-        /**
-         * Adds a file attachment to the collection. - isContent parameter is required to be true to be able to use bas64 content directly
-         *
-         * @param   {string}    name       The display name of the new attachment.
-         * @param   {string}    fileContent   base64 ontent of the file representing the content of the attachment.
-         * @param   {boolean}   isContent   if true used as base64 content of file.
-         * @return  {FileAttachment}      A FileAttachment instance.
-         */
-        private AddFileAttachmentXXXXX(name, fileContent, isContent);
+        private AddFileAttachmentXXXXX;
         /**
          * Adds a file attachment to the collection. - isContent parameter is required to be true to be able to use bas64 content directly
          *
@@ -12787,13 +12990,13 @@ declare namespace EwsJS {
          * @param   {string}        parentItemId   The Id of the parent item of the new attachments.
          * @param   {Attachment[]}  attachments    The attachments to create.
          */
-        private InternalCreateAttachments(parentItemId, attachments);
+        private InternalCreateAttachments;
         /**
          * Calls the DeleteAttachment web method to delete a list of attachments.
          *
          * @param   {Attachment[]}   attachments   The attachments to delete.
          */
-        private InternalDeleteAttachments(attachments);
+        private InternalDeleteAttachments;
         /**
          * Removes the specified attachment.
          *
@@ -12948,7 +13151,6 @@ declare namespace EwsJS {
         CreateDefaultComplexProperty(): ExtendedProperty;
         GetCollectionItemXmlElementName(complexProperty: ExtendedProperty): string;
         GetOrAddExtendedProperty(propertyDefinition: ExtendedPropertyDefinition): ExtendedProperty;
-        InternalToJson(service: ExchangeService): any;
         LoadFromXmlJsObject(jsObject: any, service: ExchangeService): void;
         RemoveExtendedProperty(propertyDefinition: ExtendedPropertyDefinition): boolean;
         SetExtendedProperty(propertyDefinition: ExtendedPropertyDefinition, value: any): void;
@@ -13059,27 +13261,158 @@ declare namespace EwsJS {
          */
         RemoveAt(index: number): void;
     }
-    class GroupMemberCollection extends ComplexPropertyCollection<GroupMember> {
+    /**
+     * Represents a collection of members of GroupMember type.
+     * @sealed
+     */
+    class GroupMemberCollection extends ComplexPropertyCollection<GroupMember> implements ICustomUpdateSerializer {
+        /**
+         * If the collection is cleared, then store PDL members collection is updated with "SetItemField". If the collection is not cleared, then store PDL members collection is updated with "AppendToItemField".
+         *
+         */
         private collectionIsCleared;
-        Add(member: GroupMember): any;
-        AddContactEmailAddress(contact: Contact, emailAddressKey: EmailAddressKey): any;
-        AddContactGroup(contactGroupId: ItemId): any;
-        AddDirectoryContact(address: string, routingType: string): any;
-        AddDirectoryPublicFolder(smtpAddress: string): any;
-        AddDirectoryUser(address: string, routingType: string): any;
-        AddOneOff(displayName: string, address: string, routingType: string): any;
-        AddPersonalContact(contactId: ItemId): any;
-        AddPublicGroup(smtpAddress: string): any;
-        AddRange(members: GroupMember[]): any;
-        Clear(): any;
-        ClearChangeLog(): any;
-        CreateComplexProperty(xmlElementName: string): GroupMember;
-        CreateDefaultComplexProperty(): GroupMember;
+        /**
+         * Initializes a new instance of the  class.
+         *
+         */
+        constructor();
+        /**
+         * Adds a member to the collection.
+         *
+         * @param   {GroupMember}   member   The member to add.
+         */
+        Add(member: GroupMember): void;
+        /**
+         * Adds a member that is linked to a specific e-mail address of a contact.
+         *
+         * @param   {Contact}   contact           The contact to link to.
+         * @param   {EmailAddressKey}   emailAddressKey   The contact's e-mail address to link to.
+         */
+        AddContactEmailAddress(contact: Contact, emailAddressKey: EmailAddressKey): void;
+        /**
+         * Adds a member linked to a Contact Group.
+         *
+         * @param   {ItemId}   contactGroupId   The Id of the contact group.
+         */
+        AddContactGroup(contactGroupId: ItemId): void;
+        /**
+         * Adds a member linked to an Active Directory contact.
+         *
+         * @param   {string}   smtpAddress   The SMTP address of the Active Directory contact.
+         */
+        AddDirectoryContact(smtpAddress: string): void;
+        /**
+         * Adds a member linked to an Active Directory contact.
+         *
+         * @param   {string}   address       The address of the Active Directory contact.
+         * @param   {string}   routingType   The routing type of the address.
+         */
+        AddDirectoryContact(address: string, routingType: string): void;
+        /**
+         * Adds a member linked to a mail-enabled Public Folder.
+         *
+         * @param   {string}   smtpAddress   The SMTP address of the mail-enabled Public Folder.
+         */
+        AddDirectoryPublicFolder(smtpAddress: string): void;
+        /**
+         * Adds a member linked to an Active Directory user.
+         *
+         * @param   {string}   smtpAddress   The SMTP address of the member.
+         */
+        AddDirectoryUser(smtpAddress: string): void;
+        /**
+         * Adds a member linked to an Active Directory user.
+         *
+         * @param   {string}   address       The address of the member.
+         * @param   {string}   routingType   The routing type of the address.
+         */
+        AddDirectoryUser(address: string, routingType: string): void;
+        /**
+         * Adds a one-off member.
+         *
+         * @param   {string}   displayName   The display name of the member.
+         * @param   {string}   smtpAddress   The SMTP address of the member.
+         */
+        AddOneOff(displayName: string, smtpAddress: string): void;
+        /**
+         * Adds a one-off member.
+         *
+         * @param   {string}   displayName   The display name of the member.
+         * @param   {string}   address       The address of the member.
+         * @param   {string}   routingType   The routing type of the address.
+         */
+        AddOneOff(displayName: string, address: string, routingType: string): void;
+        /**
+         * Adds a member linked to a contact's first available e-mail address.
+         *
+         * @param   {ItemId}   contactId   The Id of the contact.
+         */
+        AddPersonalContact(contactId: ItemId): void;
+        /**
+         * Adds a member linked to a specific contact's e-mail address.
+         *
+         * @param   {ItemId}   contactId       The Id of the contact.
+         * @param   {string}   addressToLink   The contact's address to link to.
+         */
+        AddPersonalContact(contactId: ItemId, addressToLink: string): void;
+        /**
+         * Adds a member linked to a Public Group.
+         *
+         * @param   {string}   smtpAddress   The SMTP address of the Public Group.
+         */
+        AddPublicGroup(smtpAddress: string): void;
+        /**
+         * Adds multiple members to the collection.
+         *
+         * @param   {GroupMember[]}   members   The members to add.
+         */
+        AddRange(members: GroupMember[]): void;
+        /**
+         * Clears the collection.
+         */
+        Clear(): void;
+        /**
+         * Finds the member with the specified key in the collection.
+         * Members that have not yet been saved do not have a key.
+         *
+         * @param   {}   key   The key of the member to find.
+         * @return  {}         The member with the specified key.
+         */
         Find(key: string): GroupMember;
-        GetCollectionItemXmlElementName(member: GroupMember): string;
-        InternalValidate(): any;
+        /**
+         * Removes a member from the collection.
+         *
+         * @param   {GroupMember}   member   The member to remove.
+         * @return  {boolean}       True if the group member was successfully removed from the collection, false otherwise.
+         */
         Remove(member: GroupMember): boolean;
-        RemoveAt(index: number): any;
+        /**
+         * Removes a member at the specified index.
+         *
+         * @param   {number}   index   The index of the member to remove.
+         */
+        RemoveAt(index: number): void;
+        /**
+         * Delete the whole members collection.
+         *
+         * @param   {EwsServiceXmlWriter}   writer   Xml writer.
+         */
+        private WriteDeleteMembersCollectionToXml;
+        /**
+         * Generate XML to delete individual members.
+         *
+         * @param   {EwsServiceXmlWriter}   writer    Xml writer.
+         * @param   {GroupMember[]}         members   Members to delete.
+         */
+        private WriteDeleteMembersToXml;
+        /**
+         * Generate XML to Set or Append members. When members are set, the existing PDL member collection is cleared On append members are added to the PDL existing members collection.
+         *
+         * @param   {EwsServiceXmlWriter}   writer    Xml writer.
+         * @param   {GroupMember[]}         members   Members to set or append.
+         * @param   {boolean}               setMode   True - set members, false - append members.
+         */
+        private WriteSetOrAppendMembersToXml;
     }
     /**
      * Represents a collection of Internet message headers.
@@ -13256,13 +13589,13 @@ declare namespace EwsJS {
      * ExtendedPropertyDefinition interface to be used with TypeContainer - removes circular dependency
      */
     interface IExtendedPropertyDefinition {
-        new (): ExtendedPropertyDefinition;
-        new (mapiType: MapiPropertyType): ExtendedPropertyDefinition;
-        new (tag: number, mapiType: MapiPropertyType): ExtendedPropertyDefinition;
-        new (propertySet: DefaultExtendedPropertySet, name: string, mapiType: MapiPropertyType): ExtendedPropertyDefinition;
-        new (propertySet: DefaultExtendedPropertySet, id: number, mapiType: MapiPropertyType): ExtendedPropertyDefinition;
-        new (propertySetId: Guid, name: string, mapiType: MapiPropertyType): ExtendedPropertyDefinition;
-        new (propertySetId: Guid, id: number, mapiType: MapiPropertyType): ExtendedPropertyDefinition;
+        new(): ExtendedPropertyDefinition;
+        new(mapiType: MapiPropertyType): ExtendedPropertyDefinition;
+        new(tag: number, mapiType: MapiPropertyType): ExtendedPropertyDefinition;
+        new(propertySet: DefaultExtendedPropertySet, name: string, mapiType: MapiPropertyType): ExtendedPropertyDefinition;
+        new(propertySet: DefaultExtendedPropertySet, id: number, mapiType: MapiPropertyType): ExtendedPropertyDefinition;
+        new(propertySetId: Guid, name: string, mapiType: MapiPropertyType): ExtendedPropertyDefinition;
+        new(propertySetId: Guid, id: number, mapiType: MapiPropertyType): ExtendedPropertyDefinition;
     }
     /**
      * Represents a property definition for a service object.
@@ -13307,7 +13640,7 @@ declare namespace EwsJS {
      * IndexedPropertyDefinition interface to be used with TypeContainer - removes circular dependency
      */
     interface IIndexedPropertyDefinition {
-        new (uri: string, index: string): IndexedPropertyDefinition;
+        new(uri: string, index: string): IndexedPropertyDefinition;
     }
     /**
      * Represents the definition of a folder or item property.
@@ -13339,7 +13672,7 @@ declare namespace EwsJS {
          * @param   {string}   responseActionString   The response action string.
          * @return  {ResponseActions}       ResponseActions
          */
-        private static GetResponseAction(responseActionString);
+        private static GetResponseAction;
     }
     class EwsLogging {
         static DebugLogEnabled: boolean;
@@ -13515,7 +13848,7 @@ declare namespace EwsJS {
          * @param   {ServiceErrorHandling}   errorHandlingMode   Indicates the type of error handling should be done.
          * @return  {Promise<ServiceResponseCollection<FindFolderResponse>>}     Collection of service responses :Promise.
          */
-        private InternalFindFolders(parentFolderIds, searchFilter, view, errorHandlingMode);
+        private InternalFindFolders;
         /**
          * Archives multiple items in a single call to EWS.
          *
@@ -13736,7 +14069,7 @@ declare namespace EwsJS {
          * @param   {ServiceErrorHandling}  errorHandling   Type of error handling to perform.
          * @return  {Promise<ServiceResponseCollection<GetItemResponse>>}       A ServiceResponseCollection providing results for each of the specified item Ids :Promise.
          */
-        private InternalBindToItems(itemIds, propertySet, anchorMailbox, errorHandling);
+        private InternalBindToItems;
         /**
          * Copies multiple items in a single call to EWS.
          *
@@ -13746,7 +14079,7 @@ declare namespace EwsJS {
          * @param   {ServiceErrorHandling}  errorHandling           What type of error handling should be performed.
          * @return  {Promise<ServiceResponseCollection<MoveCopyItemResponse>>}      A ServiceResponseCollection providing copy results for each of the specified item Ids :Promise.
          */
-        private InternalCopyItems(itemIds, destinationFolderId, returnNewItemIds, errorHandling);
+        private InternalCopyItems;
         /**
          * Creates multiple items in a single EWS call. Supported item classes are EmailMessage, Appointment, Contact, PostItem, Task and Item. CreateItems does not support items that have unsaved attachments.
          *
@@ -13757,7 +14090,7 @@ declare namespace EwsJS {
          * @param   {ServiceErrorHandling}  errorHandling         What type of error handling should be performed.
          * @return  {Promise<ServiceResponseCollection<ServiceResponse>>}       A ServiceResponseCollection providing creation results for each of the specified items :Promise.
          */
-        private InternalCreateItems(items, parentFolderId, messageDisposition, sendInvitationsMode, errorHandling);
+        private InternalCreateItems;
         /**
          * Deletes multiple items in a single call to EWS.
          *
@@ -13769,7 +14102,7 @@ declare namespace EwsJS {
          * @param   {boolean}                   suppressReadReceipts      Whether to suppress read receipts
          * @return  {Promise<ServiceResponseCollection<ServiceResponse>>}       A ServiceResponseCollection providing deletion results for each of the specified item Ids :Promise.
          */
-        private InternalDeleteItems(itemIds, deleteMode, sendCancellationsMode, affectedTaskOccurrences, errorHandling, suppressReadReceipts);
+        private InternalDeleteItems;
         /**
          * Moves multiple items in a single call to EWS.
          *
@@ -13779,7 +14112,7 @@ declare namespace EwsJS {
          * @param   {ServiceErrorHandling}  errorHandling         What type of error handling should be performed.
          * @return  {Promise<ServiceResponseCollection<MoveCopyItemResponse>>}      A ServiceResponseCollection providing copy results for each of the specified item Ids :Promise.
          */
-        private InternalMoveItems(itemIds, destinationFolderId, returnNewItemIds, errorHandling);
+        private InternalMoveItems;
         /**
          * Updates multiple items in a single EWS call. UpdateItems does not support items that have unsaved attachments.
          *
@@ -13792,7 +14125,7 @@ declare namespace EwsJS {
          * @param   {boolean}                               suppressReadReceipt                  Whether to suppress read receipts
          * @return  {Promise<ServiceResponseCollection<UpdateItemResponse>>}                     A ServiceResponseCollection providing update results for each of the specified items :Promise.
          */
-        private InternalUpdateItems(items, savedItemsDestinationFolderId, conflictResolution, messageDisposition, sendInvitationsOrCancellationsMode, errorHandling, suppressReadReceipt);
+        private InternalUpdateItems;
         /**
          * Loads the properties of multiple items in a single call to EWS. **Unstable for Extended Properties**
          *
@@ -13876,7 +14209,7 @@ declare namespace EwsJS {
          * @param   {PropertyDefinitionBase[]}      additionalProperties   The additional properties.
          * @return  {Promise<ServiceResponseCollection<GetAttachmentResponse>>}         Service response collection :Promise.
          */
-        private InternalGetAttachments(attachments, bodyType, additionalProperties, errorHandling);
+        private InternalGetAttachments;
         /**
          * Expands a group by retrieving a list of its members. Calling this method results in a call to EWS.
          *
@@ -13967,7 +14300,7 @@ declare namespace EwsJS {
          * @param   {string}   watermark        The watermark representing the point in time where to start receiving events.
          * @return  {GetEventsRequest}          An request to retrieve the latests events associated with a pull subscription.
          */
-        private BuildGetEventsRequest(subscriptionId, watermark);
+        private BuildGetEventsRequest;
         /**
          * Builds a request to subscribe to pull notifications in the authenticated user's mailbox.
          *
@@ -13977,7 +14310,7 @@ declare namespace EwsJS {
          * @param   {EventType[]}   eventTypes   The event types to subscribe to.
          * @return  {SubscribeToPullNotificationsRequest}   A request to subscribe to pull notifications in the authenticated user's mailbox.
          */
-        private BuildSubscribeToPullNotificationsRequest(folderIds, timeout, watermark, eventTypes);
+        private BuildSubscribeToPullNotificationsRequest;
         /**
          * Builds an request to request to subscribe to push notifications in the authenticated user's mailbox.
          *
@@ -13989,7 +14322,7 @@ declare namespace EwsJS {
          * @param   {EventType[]}   eventTypes   The event types to subscribe to.
          * @return  {SubscribeToPushNotificationsRequest}       A request to request to subscribe to push notifications in the authenticated user's mailbox.
          */
-        private BuildSubscribeToPushNotificationsRequest(folderIds, url, frequency, watermark, callerData, eventTypes);
+        private BuildSubscribeToPushNotificationsRequest;
         /**
          * Builds request to subscribe to streaming notifications in the authenticated user's mailbox.
          *
@@ -13997,14 +14330,14 @@ declare namespace EwsJS {
          * @param   {EventType[]}   eventTypes   The event types to subscribe to.
          * @return  {SubscribeToStreamingNotificationsRequest}      A request to subscribe to streaming notifications in the authenticated user's mailbox.
          */
-        private BuildSubscribeToStreamingNotificationsRequest(folderIds, eventTypes);
+        private BuildSubscribeToStreamingNotificationsRequest;
         /**
          * Buids a request to unsubscribe from a subscription.
          *
          * @param   {string}   subscriptionId   The Id of the subscription for which to get the events.
          * @return  {UnsubscribeRequest}        A request to unsubscribe from a subscription.
          */
-        private BuildUnsubscribeRequest(subscriptionId);
+        private BuildUnsubscribeRequest;
         /**
          * Retrieves the latests events associated with a pull subscription. Calling this method results in a call to EWS.
          *
@@ -14120,7 +14453,7 @@ declare namespace EwsJS {
          * @param   {string}                syncState            The optional sync state representing the point in time when to start the synchronization.
          * @return  {SyncFolderItemsRequest}        A request to synchronize the items of a specific folder.
          */
-        private BuildSyncFolderItemsRequest(syncFolderId, propertySet, ignoredItemIds, maxChangesReturned, numberOfDays, syncScope, syncState);
+        private BuildSyncFolderItemsRequest;
         /**
          * Synchronizes the items of a specific folder. Calling this method results in a call to EWS.
          *
@@ -14155,7 +14488,7 @@ declare namespace EwsJS {
          * @param   {string}        syncState      The optional sync state representing the point in time when to start the synchronization.
          * @return  {SyncFolderHierarchyRequest}        A request to synchronize the specified folder hierarchy of the mailbox this Service is connected to.
          */
-        private BuildSyncFolderHierarchyRequest(syncFolderId, propertySet, syncState);
+        private BuildSyncFolderHierarchyRequest;
         /**
          * Synchronizes the sub-folders of a specific folder. Calling this method results in a call to EWS.
          *
@@ -14232,7 +14565,7 @@ declare namespace EwsJS {
          * @param   {ServiceErrorHandling}      errorHandlingMode     The error handling mode.
          * @return  {Promise<ServiceResponseCollection<ServiceResponse>>}       :Promise
          */
-        private ApplyConversationAction(actionType, conversationIds, processRightAway, categories, enableAlwaysDelete, destinationFolderId, errorHandlingMode);
+        private ApplyConversationAction;
         /**
          * Applies one time conversation action on items in specified folder inside the conversation.
          *
@@ -14249,7 +14582,7 @@ declare namespace EwsJS {
          * @param   {ServiceErrorHandling}                          errorHandlingMode      The error handling mode.
          * @return  {Promise<ServiceResponseCollection<ServiceResponse>>}       :Promise
          */
-        private ApplyConversationOneTimeAction(actionType, idTimePairs, contextFolderId, destinationFolderId, deleteType, isRead, retentionPolicyType, retentionPolicyTagId, flag, suppressReadReceipts, errorHandlingMode);
+        private ApplyConversationOneTimeAction;
         /**
          * Sets up a conversation so that any item received within that conversation is no longer categorized. Calling this method results in a call to EWS.
          *
@@ -14400,7 +14733,8 @@ declare namespace EwsJS {
          * @param   {FolderId}                                      destinationFolderId   The destination folder id.
          * @return  {Promise<ServiceResponseCollection<ServiceResponse>>}       :Promise
          */
-        CopyItemsInConversations(idLastSyncTimePairs: KeyValuePair<ConversationId, DateTime>[], contextFolderId: FolderId, destinationFolderId: FolderId): Promise<ServiceResponseCollection<ServiceResponse>>;
+        CopyItemsInConversations(idLastSyncTimePairs: KeyValuePair<ConversationId, DateTime>[], // IEnumerable<KeyValuePair<ConversationId, DateTime?>> idTimePairs, - DateTime is Nullable
+            contextFolderId: FolderId, destinationFolderId: FolderId): Promise<ServiceResponseCollection<ServiceResponse>>;
         /**
          * Deletes the items in the specified conversation. Calling this method results in a call to EWS.
          *
@@ -14409,7 +14743,8 @@ declare namespace EwsJS {
          * @param   {DeleteMode}                                    deleteMode            The deletion mode.
          * @return  {Promise<ServiceResponseCollection<ServiceResponse>>}       :Promise
          */
-        DeleteItemsInConversations(idLastSyncTimePairs: KeyValuePair<ConversationId, DateTime>[], contextFolderId: FolderId, deleteMode: DeleteMode): Promise<ServiceResponseCollection<ServiceResponse>>;
+        DeleteItemsInConversations(idLastSyncTimePairs: KeyValuePair<ConversationId, DateTime>[], // IEnumerable<KeyValuePair<ConversationId, DateTime?>> idTimePairs, - DateTime is Nullable
+            contextFolderId: FolderId, deleteMode: DeleteMode): Promise<ServiceResponseCollection<ServiceResponse>>;
         /**
          * Moves the items in the specified conversation to the specified destination folder. Calling this method results in a call to EWS.
          *
@@ -14418,7 +14753,8 @@ declare namespace EwsJS {
          * @param   {FolderId}                                      destinationFolderId   The Id of the destination folder.
          * @return  {Promise<ServiceResponseCollection<ServiceResponse>>}       :Promise
          */
-        MoveItemsInConversations(idLastSyncTimePairs: KeyValuePair<ConversationId, DateTime>[], contextFolderId: FolderId, destinationFolderId: FolderId): Promise<ServiceResponseCollection<ServiceResponse>>;
+        MoveItemsInConversations(idLastSyncTimePairs: KeyValuePair<ConversationId, DateTime>[], // IEnumerable<KeyValuePair<ConversationId, DateTime?>> idTimePairs, - DateTime is Nullable
+            contextFolderId: FolderId, destinationFolderId: FolderId): Promise<ServiceResponseCollection<ServiceResponse>>;
         /**
          * Sets flag status for items in conversation. Calling this method would result in call to EWS.
          *
@@ -14427,7 +14763,8 @@ declare namespace EwsJS {
          * @param   {Flag}   flagStatus            Flag status to apply to conversation items.
          * @return  {Promise<ServiceResponseCollection<ServiceResponse>>}       :Promise
          */
-        SetFlagStatusForItemsInConversations(idLastSyncTimePairs: KeyValuePair<ConversationId, DateTime>[], contextFolderId: FolderId, flagStatus: Flag): Promise<ServiceResponseCollection<ServiceResponse>>;
+        SetFlagStatusForItemsInConversations(idLastSyncTimePairs: KeyValuePair<ConversationId, DateTime>[], // IEnumerable<KeyValuePair<ConversationId, DateTime?>> idTimePairs, - DateTime is Nullable
+            contextFolderId: FolderId, flagStatus: Flag): Promise<ServiceResponseCollection<ServiceResponse>>;
         /**
          * Sets the read state for items in conversation. Calling this method would result in call to EWS.
          *
@@ -14436,7 +14773,8 @@ declare namespace EwsJS {
          * @param   {boolean}                                       isRead                 if set to true, conversation items are marked as read; otherwise they are marked as unread.
          * @return  {Promise<ServiceResponseCollection<ServiceResponse>>}       :Promise
          */
-        SetReadStateForItemsInConversations(idLastSyncTimePairs: KeyValuePair<ConversationId, DateTime>[], contextFolderId: FolderId, isRead: boolean): Promise<ServiceResponseCollection<ServiceResponse>>;
+        SetReadStateForItemsInConversations(idLastSyncTimePairs: KeyValuePair<ConversationId, DateTime>[], // IEnumerable<KeyValuePair<ConversationId, DateTime?>> idTimePairs, - DateTime is Nullable
+            contextFolderId: FolderId, isRead: boolean): Promise<ServiceResponseCollection<ServiceResponse>>;
         /**
          * Sets the read state for items in conversation. Calling this method would result in call to EWS.
          *
@@ -14446,7 +14784,8 @@ declare namespace EwsJS {
          * @param   {boolean}                                       suppressReadReceipts   if set to *true* read receipts are suppressed.
          * @return  {Promise<ServiceResponseCollection<ServiceResponse>>}       :Promise
          */
-        SetReadStateForItemsInConversations(idLastSyncTimePairs: KeyValuePair<ConversationId, DateTime>[], contextFolderId: FolderId, isRead: boolean, suppressReadReceipts: boolean): Promise<ServiceResponseCollection<ServiceResponse>>;
+        SetReadStateForItemsInConversations(idLastSyncTimePairs: KeyValuePair<ConversationId, DateTime>[], // IEnumerable<KeyValuePair<ConversationId, DateTime?>> idTimePairs, - DateTime is Nullable
+            contextFolderId: FolderId, isRead: boolean, suppressReadReceipts: boolean): Promise<ServiceResponseCollection<ServiceResponse>>;
         /**
          * Sets the retention policy for items in conversation. Calling this method would result in call to EWS.
          *
@@ -14456,7 +14795,8 @@ declare namespace EwsJS {
          * @param   {Guid?}                                         retentionPolicyTagId   Retention policy tag id.  Null will clear the policy.
          * @return  {Promise<ServiceResponseCollection<ServiceResponse>>}       :Promise
          */
-        SetRetentionPolicyForItemsInConversations(idLastSyncTimePairs: KeyValuePair<ConversationId, DateTime>[], contextFolderId: FolderId, retentionPolicyType: RetentionType, retentionPolicyTagId: Guid): Promise<ServiceResponseCollection<ServiceResponse>>;
+        SetRetentionPolicyForItemsInConversations(idLastSyncTimePairs: KeyValuePair<ConversationId, DateTime>[], // IEnumerable<KeyValuePair<ConversationId, DateTime?>> idTimePairs, - DateTime is Nullable
+            contextFolderId: FolderId, retentionPolicyType: RetentionType, retentionPolicyTagId: Guid): Promise<ServiceResponseCollection<ServiceResponse>>;
         /**
          * Converts Id from one format to another in a single call to EWS.
          *
@@ -14481,7 +14821,7 @@ declare namespace EwsJS {
          * @param   {ServiceErrorHandling}  errorHandling       Type of error handling to perform.
          * @return  {Promise<ServiceResponseCollection<ConvertIdResponse>>}     A ServiceResponseCollection providing conversion results for each specified Ids :Promise.
          */
-        private InternalConvertIds(ids, destinationFormat, errorHandling);
+        private InternalConvertIds;
         /**
          * Adds delegates to a specific mailbox. Calling this method results in a call to EWS.
          *
@@ -14627,21 +14967,21 @@ declare namespace EwsJS {
          * @param   {GetNonIndexableItemDetailsParameters}   parameters   Get non indexable item details parameters
          * @return  {GetNonIndexableItemDetailsRequest}      GetNonIndexableItemDetails request
          */
-        private CreateGetNonIndexableItemDetailsRequest(parameters);
+        private CreateGetNonIndexableItemDetailsRequest;
         /**
          * Create get non indexable item statistics request
          *
          * @param   {GetNonIndexableItemStatisticsParameters}   parameters   Get non indexable item statistics parameters
          * @return  {GetNonIndexableItemStatisticsRequest}      Service response object
          */
-        private CreateGetNonIndexableItemStatisticsRequest(parameters);
+        private CreateGetNonIndexableItemStatisticsRequest;
         /**
          * Creates SearchMailboxesRequest from SearchMailboxesParameters
          *
          * @param   {SearchMailboxesParameters}   searchParameters   search parameters
          * @return  {SearchMailboxesRequest}      request object
          */
-        private CreateSearchMailboxesRequest(searchParameters);
+        private CreateSearchMailboxesRequest;
         /**
          * Get dicovery search configuration
          *
@@ -14782,7 +15122,7 @@ declare namespace EwsJS {
          * @param   {Uri}   uri   The URI.
          * @return  {Uri}         Adjusted URL.
          */
-        private AdjustServiceUriFromCredentials(uri);
+        private AdjustServiceUriFromCredentials;
         /**
          * Initializes the Url property to the Exchange Web Services URL for the specified e-mail address by calling the Autodiscover service.
          *
@@ -14802,7 +15142,7 @@ declare namespace EwsJS {
          * @param   {string}   redirectionUrl   The redirection URL.
          * @return  {boolean}                    Returns true.
          */
-        private DefaultAutodiscoverRedirectionUrlValidationCallback(redirectionUrl);
+        private DefaultAutodiscoverRedirectionUrlValidationCallback;
         /**
          * Gets the EWS URL from Autodiscover.
          *
@@ -14811,7 +15151,7 @@ declare namespace EwsJS {
          * @param   {AutodiscoverRedirectionUrlValidationCallback}  validateRedirectionUrlCallback   The validate redirection URL callback.
          * @return  {Promise<Uri>}                                  Ews URL :Promise.
          */
-        private GetAutodiscoverUrl(emailAddress, requestedServerVersion, validateRedirectionUrlCallback);
+        private GetAutodiscoverUrl;
         /**
          * Gets the EWS URL from Autodiscover GetUserSettings response.
          *
@@ -14819,7 +15159,7 @@ declare namespace EwsJS {
          * @param   {boolean}                   isExternal   If true, Autodiscover call was made externally.
          * @return  {Uri}                       EWS URL.
          */
-        private GetEwsUrlFromResponse(response, isExternal);
+        private GetEwsUrlFromResponse;
         /**
          * GetClientAccessToken
          *
@@ -14896,6 +15236,12 @@ declare namespace EwsJS {
          * @param   {IXHROptions}   request   The request.
          */
         SetContentType(request: IXHROptions): void;
+        /**
+         * Get the TimeZoneInfo objects from server
+         *
+         * @returns {Promise<TimeZoneInfo[]>}
+         */
+        GetServerTimeZones(): Promise<TimeZoneInfo[]>;
     }
     /**
      * JSON names not shared with the XmlElementNames or XmlAttributeNames classes.
@@ -15162,7 +15508,7 @@ declare namespace EwsJS {
          * @param   {BasePropertySet}   basePropertySet   The base property set.
          * @return  {PropertySet}       PropertySet
          */
-        private static CreateReadonlyPropertySet(basePropertySet);
+        private static CreateReadonlyPropertySet;
         /**
          *  Returns an enumerator that iterates through the collection. this case this.additionalProperties itself
          */
@@ -15173,7 +15519,7 @@ declare namespace EwsJS {
          * @param   {ServiceObjectType}     serviceObjectType   Type of the service object.
          * @return  {string}                Shape name.
          */
-        private static GetShapeName(serviceObjectType);
+        private static GetShapeName;
         /**
          * Removes the specified property from the set.
          *
@@ -15184,7 +15530,7 @@ declare namespace EwsJS {
         /**
          * Throws if readonly property set.
          */
-        private ThrowIfReadonly();
+        private ThrowIfReadonly;
         /**
          * Implements ISelfValidate.Validate. Validates this property set.
          */
@@ -15658,14 +16004,38 @@ declare namespace EwsJS {
     class CreateResponseObjectResponse extends CreateItemResponseBase {
         GetObjectInstance(service: ExchangeService, xmlElementName: string): Item;
     }
-    class ServiceResponseCollection<TResponse extends ServiceResponse> {
-        readonly Count: number;
-        readonly Responses: TResponse[];
-        readonly OverallResult: ServiceResult;
+    /**
+     * Represents a strogly typed list of service responses.
+     * @sealed
+     * @typeparam   {TResponse}     The type of response stored in the list.
+     */
+    class ServiceResponseCollection<TResponse extends ServiceResponse> implements IEnumerable<TResponse> {
         private responses;
         private overallResult;
-        Add(response: TResponse): void;
-        GetEnumerator(): any;
+        /**
+         * Gets the total number of responses in the list.
+         */
+        readonly Count: number;
+        readonly Responses: TResponse[];
+        /**
+         * Gets a value indicating the overall result of the request that generated this response collection.
+         * If all of the responses have their Result property set to Success, OverallResult returns Success.
+         * If at least one response has its Result property set to Warning and all other responses have their Result property set to Success, OverallResult returns Warning.
+         * If at least one response has a its Result set to Error, OverallResult returns Error.
+         */
+        readonly OverallResult: ServiceResult;
+        /**
+         * Gets an enumerator that iterates through the elements of the collection.
+         *
+         * @return  {TResponse[]}      An IEnumerator for the collection.
+         */
+        GetEnumerator(): TResponse[];
+        /**
+         * Gets the response at the specified index.
+         *
+         * @param   {number}        index   The zero-based index of the response to get.
+         * @return  {TResponse}     The response at the specified index.
+         */
         __thisIndexer(index: number): TResponse;
     }
     /**
@@ -16722,8 +17092,8 @@ declare namespace EwsJS {
          */
         readonly MeetingRequestWasSent: boolean;
         /**
-         * Gets or sets a value indicating whether responses are requested when invitations are sent for this meeting.
-         */
+        * Gets or sets a value indicating whether responses are requested when invitations are sent for this meeting.
+        */
         IsResponseRequested: boolean;
         /**
          * Gets a value indicating the type of this appointment.
@@ -17306,7 +17676,7 @@ declare namespace EwsJS {
         /**
          * Removes the picture from local attachment collection.     *
          */
-        private InternalRemoveContactPicture();
+        private InternalRemoveContactPicture;
         /**
          * Removes the contact's picture.     *
          */
@@ -17518,7 +17888,7 @@ declare namespace EwsJS {
          * @param   {FolderId}            parentFolderId       The parent folder id.
          * @param   {MessageDisposition}  messageDisposition   The message disposition.
          */
-        private InternalSend(parentFolderId, messageDisposition);
+        private InternalSend;
         /**
          * Replies to the message. Calling this method results in a call to EWS.
          *
@@ -22078,7 +22448,7 @@ declare namespace EwsJS {
         private service;
         private url;
         constructor(service: AutodiscoverService, url: Uri);
-        private CreateRedirectionResponse(httpWebResponse);
+        private CreateRedirectionResponse;
         CreateServiceResponse(): AutodiscoverResponse;
         GetRequestXmlElementName(): string;
         GetResponseStream(response: any): any;
@@ -22248,10 +22618,10 @@ declare namespace EwsJS {
         GetDomainSettings(domains: string[], settings: DomainSettingName[], requestedVersion: ExchangeVersion): Promise<GetDomainSettingsResponseCollection>;
         GetDomainSettings(domains: string[], requestedVersion: ExchangeVersion, ...domainSettingNames: DomainSettingName[]): Promise<GetDomainSettingsResponseCollection>;
         GetDomainSettings(domain: string, requestedVersion: ExchangeVersion, ...domainSettingNames: DomainSettingName[]): Promise<GetDomainSettingsResponse>;
-        private GetEndpointsFromHttpResponse(response);
+        private GetEndpointsFromHttpResponse;
         GetRedirectUrl(domainName: string): Promise<Uri>;
         GetSettings<TGetSettingsResponseCollection, TSettingName>(identities: string[], settings: TSettingName[], requestedVersion: ExchangeVersion, getSettingsMethod: GetSettingsMethod<TGetSettingsResponseCollection, TSettingName>, getDomainMethod: () => string): Promise<TGetSettingsResponseCollection>;
-        private GetSettingsRecursiveLookup<TGetSettingsResponseCollection, TSettingName>(identities, settings, requestedVersion, getSettingsMethod, autodiscoverUrlRef, hosts, currentHostIndex?);
+        private GetSettingsRecursiveLookup;
         /**internal method */
         GetUserSettings(smtpAddresses: string[], settings: UserSettingName[]): Promise<GetUserSettingsResponseCollection>;
         /**
@@ -22265,15 +22635,15 @@ declare namespace EwsJS {
         GetUserSettings(userSmtpAddress: string, ...userSettingNames: UserSettingName[]): Promise<GetUserSettingsResponse>;
         GetUsersSettings(userSmtpAddresses: string[], ...userSettingNames: UserSettingName[]): Promise<GetUserSettingsResponseCollection>;
         InternalGetDomainSettings(domains: string[], settings: DomainSettingName[], requestedVersion: ExchangeVersion, autodiscoverUrlRef: IRefParam<Uri>, thisref: AutodiscoverService, currentHop?: number): Promise<GetDomainSettingsResponseCollection>;
-        private InternalGetLegacyUserSettings(emailAddress, requestedSettings);
-        private InternalGetLegacyUserSettingsPrivate<Tsettings>(emailAddress, redirectionEmailAddresses, currentHop);
+        private InternalGetLegacyUserSettings;
+        private InternalGetLegacyUserSettingsPrivate;
         InternalGetSoapUserSettings(smtpAddress: string, requestedSettings: UserSettingName[]): Promise<GetUserSettingsResponse>;
         InternalGetSoapUserSettingsRecursive(smtpAddresses: string[], requestedSettings: UserSettingName[], redirectionEmailAddresses?: string[], currentHop?: number): Promise<GetUserSettingsResponse>;
         InternalGetUserSettings(smtpAddresses: string[], settings: UserSettingName[], requestedVersion: ExchangeVersion, autodiscoverUrlRef: IRefParam<Uri>, thisref: AutodiscoverService, currentHop?: number): Promise<GetUserSettingsResponseCollection>;
         ProcessHttpErrorResponse(httpWebResponse: XMLHttpRequest, webException: any): any;
         TraceResponse(response: XMLHttpRequest, memoryStream: any): any;
         TryGetAutodiscoverEndpointUrl(host: string, url: IOutParam<Uri>): Promise<boolean>;
-        private TryGetEnabledEndpointsForHost(host, endpoints, currentHop?);
+        private TryGetEnabledEndpointsForHost;
         ThrowIfDuplicateRedirection(emailAddress: string, redirectionEmailAddresses: IRefParam<string[]>): void;
         TryGetRedirectionResponse(response: XMLHttpRequest, redirectUrl: IOutParam<Uri>): boolean;
     }
@@ -23425,7 +23795,7 @@ declare namespace EwsJS {
          * @param   {any}   jsObject	Json Object converted from XML.
          * @return  {string[]}          Array of recipients
          */
-        private static GetRecipients(jsObject);
+        private static GetRecipients;
         /**
          * Load extended properties from XML.
          *
@@ -23433,7 +23803,7 @@ declare namespace EwsJS {
          * @param   {ExchangeService}	service	The service.
          * @return  {ExtendedPropertyCollection}     Extended properties collection
          */
-        private static LoadExtendedPropertiesXmlJsObject(jsObject, service);
+        private static LoadExtendedPropertiesXmlJsObject;
         /**
          * Loads service object from XML.
          *
@@ -23448,7 +23818,7 @@ declare namespace EwsJS {
          * @param   {any}   jsObject	Json Object converted from XML.
          * @return  {KeywordStatisticsSearchResult[]}       Array of keyword statistics
          */
-        private static LoadKeywordStatsXmlJsObject(jsObject);
+        private static LoadKeywordStatsXmlJsObject;
         /**
          * Load preview items from XML.
          *
@@ -23456,7 +23826,7 @@ declare namespace EwsJS {
          * @param   {ExchangeService}	service	The service.
          * @return  {SearchPreviewItem[]}     Array of preview items
          */
-        private static LoadPreviewItemsXmlJsObject(jsObject, service);
+        private static LoadPreviewItemsXmlJsObject;
     }
     /**
      * Represents search preview item.
@@ -23851,7 +24221,7 @@ declare namespace EwsJS {
          * @param   {any}                   startTime        The start time.
          * @param   {any}                   endTime          The end time.
          */
-        private static WriteToXml(writer, xmlElementName, startTime, endTime);
+        private static WriteToXml;
     }
     /**
      * Represents the base class for Id expressed in a specific format.
@@ -24111,8 +24481,8 @@ declare namespace EwsJS {
         static ParseMapiIntegerValue(s: string): any;
     }
     class MapiTypeConverterMapEntry {
-        Parse: (string) => any;
-        ConvertToString: (any) => string;
+        Parse: (string: any) => any;
+        ConvertToString: (any: any) => string;
         Type: MapiTypeConverterTypeSystem;
         IsArray: boolean;
         readonly DefaultValue: any;
@@ -24257,13 +24627,13 @@ declare namespace EwsJS {
          *
          * @param   {any}   jsObject   The detail node.
          */
-        private ParseDetailNode(jsObject);
+        private ParseDetailNode;
         /**
          * Parses the message XML.
          *
          * @param   {any}   jsObject   The message Xml object.
          */
-        private ParseMessageXml(jsObject);
+        private ParseMessageXml;
     }
     type base64String = string;
     /**
@@ -24358,7 +24728,7 @@ declare namespace EwsJS {
          * @param   {base64String}   bytes   The bytes.
          * @return  {string}         [description]
          */
-        private GetBase64PropertyValue(bytes);
+        private GetBase64PropertyValue;
         /**
          * Initializes properties.
          *
@@ -24369,14 +24739,14 @@ declare namespace EwsJS {
          *
          * @param   {UserConfigurationProperties}   requestedProperties   The properties requested for this UserConfiguration.
          */
-        private InitializeProperties(requestedProperties);
+        private InitializeProperties;
         /**
          * Determines whether the specified property was updated.
          *
          * @param   {UserConfigurationProperties}   property   property to evaluate.
          * @return  {boolean}                       Boolean indicating whether to send the property Xml.
          */
-        private IsPropertyUpdated(property);
+        private IsPropertyUpdated;
         /**
          * Loads the specified properties on the user configuration.
          * Calling this method results in a call to EWS.
@@ -24388,11 +24758,11 @@ declare namespace EwsJS {
          *
          * @param   {UserConfigurationProperties}   property   Property to update.
          */
-        private MarkPropertyForUpdate(property);
+        private MarkPropertyForUpdate;
         /**
          * Resets flags to indicate that properties haven't been modified.
          */
-        private ResetIsDirty();
+        private ResetIsDirty;
         /**
          * Saves the user configuration. Calling this method results in a call to EWS.
          *
@@ -24426,7 +24796,7 @@ declare namespace EwsJS {
          *
          * @param   {EwsServiceXmlWriter}   writer   The writer.
          */
-        private WriteBinaryDataToXml(writer);
+        private WriteBinaryDataToXml;
         /**
          * Writes a byte array to Xml.
          *
@@ -24434,13 +24804,13 @@ declare namespace EwsJS {
          * @param   {base64String}          byteArray        Byte array to write #base64 string.
          * @param   {string}                xmlElementName   Name of the Xml element.
          */
-        private static WriteByteArrayToXml(writer, byteArray, xmlElementName);
+        private static WriteByteArrayToXml;
         /**
          * Writes the XmlData property to Xml.
          *
          * @param   {EwsServiceXmlWriter}   writer   The writer.
          */
-        private WriteXmlDataToXml(writer);
+        private WriteXmlDataToXml;
     }
     class AbstractFolderIdWrapper {
         GetFolder(): Folder;
@@ -24532,7 +24902,7 @@ declare namespace EwsJS {
          * @param   {string}     		  xmlElementName		Name of the element.
          * @param   {ExchangeService}     service               The service.
          */
-        private LoadEventsFromXmlJsObject(jsEventsArray, eventElementName, service);
+        private LoadEventsFromXmlJsObject;
     }
     /**
      * Provides data to a StreamingSubscriptionConnection's OnNotificationEvent event.
@@ -24648,44 +25018,44 @@ declare namespace EwsJS {
          *
          * @param   {any}   response   The response.
          */
-        private HandleServiceResponseObject(response);
+        private HandleServiceResponseObject;
         /**
          * Internal helper method called when the request disconnects.
          *
          * @param   {Exception}   ex   The exception that caused the disconnection. May be null.
          */
-        private InternalOnDisconnect(ex);
+        private InternalOnDisconnect;
         /**
          * Internal helper method called when the request receives headers.
          *
          * @param   {any}   headers   The headerf from server.
          */
-        private InternalOnResponseHeader(headers);
+        private InternalOnResponseHeader;
         /**
          * Issues the general failure.
          *
          * @param   {GetStreamingEventsResponse}   gseResponse   The GetStreamingEvents response.
          */
-        private IssueGeneralFailure(gseResponse);
+        private IssueGeneralFailure;
         /**
          * Issues the notification events.
          *
          * @param   {GetStreamingEventsResponse}   gseResponse   The GetStreamingEvents response.
          */
-        private IssueNotificationEvents(gseResponse);
+        private IssueNotificationEvents;
         /**
          * Issues the subscription failures.
          *
          * @param   {GetStreamingEventsResponse}   gseResponse   The GetStreamingEvents response.
          */
-        private IssueSubscriptionFailures(gseResponse);
+        private IssueSubscriptionFailures;
         /**
          * Called when the request is disconnected.
          *
          * @param   {any}   								sender   The sender.
          * @param   {HangingRequestDisconnectEventArgs}   	args     The  instance containing the event data.
          */
-        private OnRequestDisconnect(sender, args);
+        private OnRequestDisconnect;
         /**
          * Opens this connection so it starts receiving events from the server.
          * This results in a long-standing call to EWS.
@@ -24977,8 +25347,8 @@ declare namespace EwsJS {
         SearchFilterChanged(complexProperty: ComplexProperty): void;
     }
     interface INot {
-        new (): Not;
-        new (searchFilter: SearchFilter): Not;
+        new(): Not;
+        new(searchFilter: SearchFilter): Not;
     }
     /**
      * Represents a collection of search filters linked by a logical operator. Applications can use SearchFilterCollection to define complex search filters such as "Condition1 AND Condition2".
@@ -25076,12 +25446,12 @@ declare namespace EwsJS {
          *
          * @param   {ComplexProperty}   complexProperty   The complex property.
          */
-        private SearchFilterChanged(complexProperty);
+        private SearchFilterChanged;
     }
     interface ISearchFilterCollection {
-        new (): SearchFilterCollection;
-        new (logicalOperator: LogicalOperator): SearchFilterCollection;
-        new (logicalOperator: LogicalOperator, searchFilters: SearchFilter[]): SearchFilterCollection;
+        new(): SearchFilterCollection;
+        new(logicalOperator: LogicalOperator): SearchFilterCollection;
+        new(logicalOperator: LogicalOperator, searchFilters: SearchFilter[]): SearchFilterCollection;
     }
     abstract class PropertyBasedFilter extends SearchFilter {
         private propertyDefinition;
@@ -25091,8 +25461,8 @@ declare namespace EwsJS {
         PropertyDefinition: PropertyDefinitionBase;
     }
     interface IPropertyBasedFilter {
-        new (): PropertyBasedFilter;
-        new (propertyDefinition: PropertyDefinitionBase): PropertyBasedFilter;
+        new(): PropertyBasedFilter;
+        new(propertyDefinition: PropertyDefinitionBase): PropertyBasedFilter;
     }
     /**
      * Represents a search filter that checks for the presence of a substring inside a text property. Applications can use ContainsSubstring to define conditions such as "Field CONTAINS Value" or "Field IS PREFIXED WITH Value".
@@ -25135,9 +25505,9 @@ declare namespace EwsJS {
         constructor(propertyDefinition: PropertyDefinitionBase, value: string, containmentMode: ContainmentMode, comparisonMode: ComparisonMode);
     }
     interface IContainsSubstring {
-        new (): ContainsSubstring;
-        new (propertyDefinition: PropertyDefinitionBase, value: string): ContainsSubstring;
-        new (propertyDefinition: PropertyDefinitionBase, value: string, containmentMode: ContainmentMode, comparisonMode: ComparisonMode): ContainsSubstring;
+        new(): ContainsSubstring;
+        new(propertyDefinition: PropertyDefinitionBase, value: string): ContainsSubstring;
+        new(propertyDefinition: PropertyDefinitionBase, value: string, containmentMode: ContainmentMode, comparisonMode: ComparisonMode): ContainsSubstring;
     }
     /**
      * Represents a bitmask exclusion search filter. Applications can use ExcludesBitExcludesBitmaskFilter to define conditions such as "(OrdinalField and 0x0010) != 0x0010"
@@ -25161,8 +25531,8 @@ declare namespace EwsJS {
         constructor(propertyDefinition: PropertyDefinitionBase, bitmask: number);
     }
     interface IExcludesBitmask {
-        new (): ExcludesBitmask;
-        new (propertyDefinition: PropertyDefinitionBase, bitmask: number): ExcludesBitmask;
+        new(): ExcludesBitmask;
+        new(propertyDefinition: PropertyDefinitionBase, bitmask: number): ExcludesBitmask;
     }
     /**
      * Represents a search filter checking if a field is set. Applications can use ExistsFilter to define conditions such as "Field IS SET".
@@ -25180,8 +25550,8 @@ declare namespace EwsJS {
         constructor(propertyDefinition: PropertyDefinitionBase);
     }
     interface IExists {
-        new (): Exists;
-        new (propertyDefinition: PropertyDefinitionBase): Exists;
+        new(): Exists;
+        new(propertyDefinition: PropertyDefinitionBase): Exists;
     }
     /**
      * Represents the base class for relational filters (for example, IsEqualTo, IsGreaterThan or IsLessThanOrEqualTo).
@@ -25218,9 +25588,9 @@ declare namespace EwsJS {
         constructor(propertyDefinition: PropertyDefinitionBase, value: any);
     }
     interface IRelationalFilter {
-        new (): RelationalFilter;
-        new (propertyDefinition: PropertyDefinitionBase, otherPropertyDefinition: PropertyDefinitionBase): RelationalFilter;
-        new (propertyDefinition: PropertyDefinitionBase, value: any): RelationalFilter;
+        new(): RelationalFilter;
+        new(propertyDefinition: PropertyDefinitionBase, otherPropertyDefinition: PropertyDefinitionBase): RelationalFilter;
+        new(propertyDefinition: PropertyDefinitionBase, value: any): RelationalFilter;
     }
     /**
      * Represents a search filter that checks if a property is equal to a given value or other property.
@@ -25246,9 +25616,9 @@ declare namespace EwsJS {
         constructor(propertyDefinition: PropertyDefinitionBase, value: any);
     }
     interface IIsEqualTo {
-        new (): IsEqualTo;
-        new (propertyDefinition: PropertyDefinitionBase, otherPropertyDefinition: PropertyDefinitionBase): IsEqualTo;
-        new (propertyDefinition: PropertyDefinitionBase, value: any): IsEqualTo;
+        new(): IsEqualTo;
+        new(propertyDefinition: PropertyDefinitionBase, otherPropertyDefinition: PropertyDefinitionBase): IsEqualTo;
+        new(propertyDefinition: PropertyDefinitionBase, value: any): IsEqualTo;
     }
     /**
      * Represents a search filter that checks if a property is greater than a given value or other property.
@@ -25274,9 +25644,9 @@ declare namespace EwsJS {
         constructor(propertyDefinition: PropertyDefinitionBase, value: any);
     }
     interface IIsGreaterThan {
-        new (): IsGreaterThan;
-        new (propertyDefinition: PropertyDefinitionBase, otherPropertyDefinition: PropertyDefinitionBase): IsGreaterThan;
-        new (propertyDefinition: PropertyDefinitionBase, value: any): IsGreaterThan;
+        new(): IsGreaterThan;
+        new(propertyDefinition: PropertyDefinitionBase, otherPropertyDefinition: PropertyDefinitionBase): IsGreaterThan;
+        new(propertyDefinition: PropertyDefinitionBase, value: any): IsGreaterThan;
     }
     /**
      * Represents a search filter that checks if a property is greater than or equal to a given value or other property.
@@ -25302,9 +25672,9 @@ declare namespace EwsJS {
         constructor(propertyDefinition: PropertyDefinitionBase, value: any);
     }
     interface IIsGreaterThanOrEqualTo {
-        new (): IsGreaterThanOrEqualTo;
-        new (propertyDefinition: PropertyDefinitionBase, otherPropertyDefinition: PropertyDefinitionBase): IsGreaterThanOrEqualTo;
-        new (propertyDefinition: PropertyDefinitionBase, value: any): IsGreaterThanOrEqualTo;
+        new(): IsGreaterThanOrEqualTo;
+        new(propertyDefinition: PropertyDefinitionBase, otherPropertyDefinition: PropertyDefinitionBase): IsGreaterThanOrEqualTo;
+        new(propertyDefinition: PropertyDefinitionBase, value: any): IsGreaterThanOrEqualTo;
     }
     /**
      * Represents a search filter that checks if a property is less than a given value or other property.
@@ -25330,9 +25700,9 @@ declare namespace EwsJS {
         constructor(propertyDefinition: PropertyDefinitionBase, value: any);
     }
     interface IIsLessThan {
-        new (): IsLessThan;
-        new (propertyDefinition: PropertyDefinitionBase, otherPropertyDefinition: PropertyDefinitionBase): IsLessThan;
-        new (propertyDefinition: PropertyDefinitionBase, value: any): IsLessThan;
+        new(): IsLessThan;
+        new(propertyDefinition: PropertyDefinitionBase, otherPropertyDefinition: PropertyDefinitionBase): IsLessThan;
+        new(propertyDefinition: PropertyDefinitionBase, value: any): IsLessThan;
     }
     /**
      * Represents a search filter that checks if a property is less than or equal to a given value or other property.
@@ -25358,9 +25728,9 @@ declare namespace EwsJS {
         constructor(propertyDefinition: PropertyDefinitionBase, value: any);
     }
     interface IIsLessThanOrEqualTo {
-        new (): IsLessThanOrEqualTo;
-        new (propertyDefinition: PropertyDefinitionBase, otherPropertyDefinition: PropertyDefinitionBase): IsLessThanOrEqualTo;
-        new (propertyDefinition: PropertyDefinitionBase, value: any): IsLessThanOrEqualTo;
+        new(): IsLessThanOrEqualTo;
+        new(propertyDefinition: PropertyDefinitionBase, otherPropertyDefinition: PropertyDefinitionBase): IsLessThanOrEqualTo;
+        new(propertyDefinition: PropertyDefinitionBase, value: any): IsLessThanOrEqualTo;
     }
     /**
      * Represents a search filter that checks if a property is not equal to a given value or other property.
@@ -25386,9 +25756,9 @@ declare namespace EwsJS {
         constructor(propertyDefinition: PropertyDefinitionBase, value: any);
     }
     interface IIsNotEqualTo {
-        new (): IsNotEqualTo;
-        new (propertyDefinition: PropertyDefinitionBase, otherPropertyDefinition: PropertyDefinitionBase): IsNotEqualTo;
-        new (propertyDefinition: PropertyDefinitionBase, value: any): IsNotEqualTo;
+        new(): IsNotEqualTo;
+        new(propertyDefinition: PropertyDefinitionBase, otherPropertyDefinition: PropertyDefinitionBase): IsNotEqualTo;
+        new(propertyDefinition: PropertyDefinitionBase, value: any): IsNotEqualTo;
     }
     /**
      * Represents the base view class for search operations.
@@ -25807,7 +26177,7 @@ declare namespace EwsJS {
         /**
          * Validates this grouping.
          */
-        private InternalValidate();
+        private InternalValidate;
         /**
          * Implements ISelfValidate.Validate. Validates this grouping.
          */
@@ -26008,6 +26378,6 @@ declare namespace EwsJS {
         GetPhoneCallInformation(id: PhoneCallId): PhoneCall;
         PlayOnPhone(itemId: ItemId, dialString: string): PhoneCall;
     }
-    
+
 }
 
