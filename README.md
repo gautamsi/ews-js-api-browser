@@ -5,7 +5,7 @@
 built for ionic, electron and Outlook Add-In (mail apps) from https://github.com/gautamsi/ews-javascript-api  
 based on `ews-javascript-api@0.9.5`    
 
-> 0.2.0 brings changes from `ews-javascript-api@0.9.5`
+> 0.2.0 brings changes from `ews-javascript-api@0.9.5` (use `@0.2.0` or `@next` tag)
 
 
 > 0.1.0 adds support for Outlook Mail Apps/Add-ins
