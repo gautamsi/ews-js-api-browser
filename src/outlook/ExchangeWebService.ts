@@ -9,7 +9,7 @@ declare var Office: { context: { mailbox: { makeEwsRequestAsync: (data: string, 
 
 export class XHROutlook implements ews.IXHRApi {
 	xhr(xhroptions: ews.IXHROptions, progressDelegate?: (progressData: ews.IXHRProgress) => void): Promise<XMLHttpRequest> {
-		return <any>new ews.Promise<XMLHttpRequest>((resolve, reject) => {
+		return <any>new Promise<XMLHttpRequest>((resolve, reject) => {
 			Office.context.mailbox.makeEwsRequestAsync(xhroptions.data, (result) => {
 				let res: XMLHttpRequest = <any>{
 					status: 200,
@@ -31,7 +31,7 @@ export class XHROutlook implements ews.IXHRApi {
 
 	xhrStream(xhroptions: ews.IXHROptions, progressDelegate: (progressData: ews.IXHRProgress) => void): Promise<XMLHttpRequest> {
 
-		return <any>new ews.Promise((resolve, reject) => {
+		return <any>new Promise((resolve, reject) => {
 			reject(new Error("not implemented/ not used"))
 		});
 	}
